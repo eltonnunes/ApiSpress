@@ -1,0 +1,6 @@
+namespace WebApiSpress.Areas.HelpPage.ModelDescriptions
+{
+    public class SimpleTypeModelDescription : ModelDescription
+    {
+    }
+}
