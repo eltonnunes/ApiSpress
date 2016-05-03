@@ -52,6 +52,8 @@ namespace WebApiSpress.Negocios.Firebird
                 nrCNPJ = queryString["" + (int)CAMPOS.NRCNPJ];
             //dtFiltro = "20160215";
 
+            dtFiltro = dtFiltro.Replace("-", "");
+
             painel_taxservices_dbContext _dbAtos;
             if (_dbAtosContext == null)
             {
@@ -61,8 +63,8 @@ namespace WebApiSpress.Negocios.Firebird
             else
                 _dbAtos = _dbAtosContext;
 
-            //string connstring = Bibliotecas.Permissoes.GetConnectionString(token, _dbAtos);
-            string connstring = "User=SYSDBA;Password=masterkey;Database=C:\\IBX\\dealer.fdb;Dialect=3;Charset=NONE";
+            string connstring = Bibliotecas.Permissoes.GetConnectionString(token, _dbAtos);
+            //string connstring = "User=SYSDBA;Password=masterkey;Database=C:\\IBX\\dealer.fdb;Dialect=3;Charset=NONE";
 
             Retorno retorno = new Retorno();
             retorno.Registros = new List<dynamic>();
@@ -100,11 +102,17 @@ namespace WebApiSpress.Negocios.Firebird
                                 ", VC.EXPMONCOD AS dsBandeira" +
                                 ", VC.CACMODVLR AS vlVenda" +
                                 ", VC.CACMODNROPARCELAS AS qtParcelas" +
-                                ", CAST(VC.RECEBINRO AS VARCHAR(15)) AS cdERP" +
+                                //", CAST(VC.RECEBINRO AS VARCHAR(15)) AS cdERP" +
+                                ", VC.K0 AS cdERP" +
                                 //", CAST(VC.CACRESNRO AS VARCHAR(30)) AS codResumoVenda" +
                                 " FROM TCCCACMOD VC" +
                                 " JOIN TCCCACMOV M ON M.RECEBINRO = VC.RECEBINRO" +
-                                " JOIN TCCCAIXA C ON C.CAIXACOD = M.CACMODCODAGEATU AND M.CACMOVIDTOPERACAO = 'EN'" + // movimento de entrada
+                                                 " AND M.EXPMONCOD = VC.EXPMONCOD" +
+                                                 " AND M.CACADMCOD = VC.CACADMCOD" +
+                                                 " AND M.CACMODDATREGISTRO = VC.CACMODDATREGISTRO" +
+                                                 " AND M.CACMODSEQ = VC.CACMODSEQ" +
+                                                 " AND M.CACMOVIDTOPERACAO = 'EN'" + // movimento de entrada
+                                " JOIN TCCCAIXA C ON C.CAIXACOD = M.CACMODCODAGEATU" + 
                                 " JOIN TGLFILIAL F ON F.FILIALCOD = C.FILIALCOD" +
                                 " WHERE VC.CACMODIDTSITUACAO NOT IN ('CA', 'CR')" + // despreza vendas canceladas
                                 " AND VC.CACMODDATREGISTRO = " + dtFiltro + 
@@ -117,16 +125,16 @@ namespace WebApiSpress.Negocios.Firebird
                         while (r.Read())
                         {
                             retorno.Registros.Add(new ConsultaVendas
-                                                 {
-                                                    cdERP = Convert.ToString(r["cdERP"]),
-                                                    cdSacado = null,
-                                                    dsBandeira = r["dsBandeira"].Equals(DBNull.Value) ? null : Convert.ToString(r["dsBandeira"]).Trim(),
-                                                    dtVenda = (DateTime)r["dtVenda"],
-                                                    nrCNPJ = Convert.ToString(r["nrCNPJ"]),
-                                                    nrNSU = r["nrNSU"].Equals(DBNull.Value) ? null : Convert.ToString(r["nrNSU"]).Trim(),
-                                                    qtParcelas = Convert.ToInt32(r["qtParcelas"]),
-                                                    vlVenda = Convert.ToDecimal(r["vlVenda"])
-                                                });
+                            {
+                                cdERP = Convert.ToString(r["cdERP"]),
+                                cdSacado = r["dsBandeira"].Equals(DBNull.Value) ? null : Convert.ToString(r["dsBandeira"]).Trim(),
+                                dsBandeira = r["dsBandeira"].Equals(DBNull.Value) ? null : Convert.ToString(r["dsBandeira"]).Trim(),
+                                dtVenda = (DateTime)r["dtVenda"],
+                                nrCNPJ = Convert.ToString(r["nrCNPJ"]),
+                                nrNSU = r["nrNSU"].Equals(DBNull.Value) ? null : Convert.ToString(r["nrNSU"]).Trim(),
+                                qtParcelas = Convert.ToInt32(r["qtParcelas"]),
+                                vlVenda = Convert.ToDecimal(r["vlVenda"])
+                            });
                         }
                     }
 
@@ -144,11 +152,17 @@ namespace WebApiSpress.Negocios.Firebird
                                 ", VD.EXPMONCOD AS dsBandeira" +
                                 ", VD.CABMODVLR AS vlVenda" +
                                 ", VD.CABMODNROPARCELAS AS qtParcelas" +
-                                ", CAST(VD.RECEBINRO AS VARCHAR(15)) AS cdERP" +
+                                //", CAST(VD.RECEBINRO AS VARCHAR(15)) AS cdERP" +
+                                ", VD.K0 AS cdERP" +
                                 //", CAST(VD.CABRESNRO AS VARCHAR(30)) AS codResumoVenda" +
                                 " FROM TCCCABMOD VD" +
                                 " JOIN TCCCABMOV M ON M.RECEBINRO = VD.RECEBINRO" +
-                                " JOIN TCCCAIXA C ON C.CAIXACOD = M.CABMODCODAGEATU AND M.CABMOVIDTOPERACAO = 'EN'" + // movimento de entrada
+                                                 " AND M.EXPMONCOD = VD.EXPMONCOD" +
+                                                 " AND M.CABADMCOD = VD.CABADMCOD" +
+                                                 " AND M.CABMODDATREGISTRO = VD.CABMODDATREGISTRO" +
+                                                 " AND M.CABMODSEQ = VD.CABMODSEQ" +
+                                                 " AND M.CABMOVIDTOPERACAO = 'EN'" + // movimento de entrada
+                                " JOIN TCCCAIXA C ON C.CAIXACOD = M.CABMODCODAGEATU" + 
                                 " JOIN TGLFILIAL F ON F.FILIALCOD = C.FILIALCOD" +
                                 " WHERE VD.CABMODIDTSITUACAO NOT IN ('CA', 'CR')" + // despreza vendas canceladas
                                 " AND VD.CABMODDATREGISTRO = " + dtFiltro + // campo é inteiro!
@@ -163,7 +177,7 @@ namespace WebApiSpress.Negocios.Firebird
                             retorno.Registros.Add(new ConsultaVendas
                             {
                                 cdERP = Convert.ToString(r["cdERP"]),
-                                cdSacado = null,
+                                cdSacado = r["dsBandeira"].Equals(DBNull.Value) ? null : Convert.ToString(r["dsBandeira"]).Trim(),
                                 dsBandeira = r["dsBandeira"].Equals(DBNull.Value) ? null : Convert.ToString(r["dsBandeira"]).Trim(),
                                 dtVenda = (DateTime)r["dtVenda"],
                                 nrCNPJ = Convert.ToString(r["nrCNPJ"]),

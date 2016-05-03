@@ -68,6 +68,7 @@ namespace WebApiSpress.Models.Firebird
         public List<TitulosExpress> GetTitulosExpress(String dta)
         {
             String connstring = this.Database.Connection.ConnectionString;
+            //string connstring = Bibliotecas.Permissoes.GetConnectionString(token);
             FbConnection conn = new FbConnection(connstring);
 
             try

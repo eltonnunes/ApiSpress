@@ -225,6 +225,7 @@
     <Compile Include="Areas\HelpPage\SampleGeneration\SampleDirection.cs" />
     <Compile Include="Areas\HelpPage\SampleGeneration\TextSample.cs" />
     <Compile Include="Areas\HelpPage\XmlDocumentationProvider.cs" />
+    <Compile Include="Bibliotecas\DatabaseQueries.cs" />
     <Compile Include="Bibliotecas\Device.cs" />
     <Compile Include="Bibliotecas\LogAcaoUsuario.cs" />
     <Compile Include="Bibliotecas\LogAcesso.cs" />
@@ -232,6 +233,7 @@
     <Compile Include="Bibliotecas\Permissoes.cs" />
     <Compile Include="Bibliotecas\UrlAPIs.cs" />
     <Compile Include="Controllers\Firebird\ConsultaVendasController.cs" />
+    <Compile Include="Controllers\Firebird\CorrigeVendasController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\Firebird\ConsultaTitulosController.cs" />
     <Compile Include="Controllers\ValuesController.cs" />
@@ -252,6 +254,7 @@
     <Compile Include="Models\Object\Almoxarifado.cs" />
     <Compile Include="Models\Object\Cofins.cs" />
     <Compile Include="Models\Object\ConsultaVendas.cs" />
+    <Compile Include="Models\Object\CorrigeVendaERP.cs" />
     <Compile Include="Models\Object\DadosImportacao.cs" />
     <Compile Include="Models\Object\FiltroTitulos.cs" />
     <Compile Include="Models\Object\ICMSIPI.cs" />
@@ -267,6 +270,7 @@
     <Compile Include="Models\Object\Retorno.cs" />
     <Compile Include="Models\Object\TitulosAcert.cs" />
     <Compile Include="Models\Firebird\TyresolesContext.cs" />
+    <Compile Include="Models\Object\VendasCorrecaoSpress.cs" />
     <Compile Include="Models\Sql\Adquirente.cs" />
     <Compile Include="Models\Sql\agendamento_finalizado.cs" />
     <Compile Include="Models\Sql\Amex.cs" />
@@ -704,6 +708,7 @@
     <Compile Include="Models\Titulos.cs" />
     <Compile Include="Negocios\Firebird\GatewayConsultaTitulos.cs" />
     <Compile Include="Negocios\Firebird\GatewayConsultaVendas.cs" />
+    <Compile Include="Negocios\Firebird\GatewayCorrigeVendas.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
