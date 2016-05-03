@@ -65,38 +65,48 @@ namespace WebApiSpress.Negocios.Firebird
 
             //dtFiltro = "20160215";
 
-            DataTable Collection = new DataTable();
+            //DataTable Collection = new DataTable();
 
+            //try
+            //{
+            //    Collection = _db.GetTitulos(dtFiltro);
+            //}
+            //catch (Exception e)
+            //{
+            //    throw e;
+            //}
+
+            List<TitulosExpress> list;
             try
             {
-                Collection = _db.GetTitulos(dtFiltro);
+                list = _db.GetTitulosExpress(dtFiltro);
             }
             catch (Exception e)
             {
                 throw e;
             }
 
-            retorno.TotalDeRegistros = Collection.Rows.Count;
+            retorno.TotalDeRegistros = list.Count;//Collection.Rows.Count;
             
             int skipRows = (pageNumber - 1) * pageSize;
             pageNumber = 1;
 
-            List<TitulosExpress> list = (from rw in Collection.AsEnumerable()
-                                       select new TitulosExpress()
-                                       {
-                                           nrCNPJ = Convert.ToString(rw["nrCNPJ"]),
-                                           nrNSU = Convert.ToString(rw["nrNSU"]),
-                                           dtVenda = Convert.ToDateTime(Convert.ToString(rw["dtVenda"]).Substring(0, 4) + "-" + Convert.ToString(rw["dtVenda"]).Substring(4, 2) + "-" + Convert.ToString(rw["dtVenda"]).Substring(6, 2)),
-                                           cdAdquirente = Convert.ToInt32(rw["cdAdquirente"]),
-                                           dsBandeira = Convert.ToString(rw["dsBandeira"]),
-                                           vlVenda = Convert.ToDouble(rw["vlVenda"]),
-                                           qtParcelas = Convert.ToInt32(rw["qtParcelas"]),
-                                           dtTitulo = Convert.ToDateTime(Convert.ToString(rw["dtTitulo"]).Substring(0, 4) + "-" + Convert.ToString(rw["dtTitulo"]).Substring(4, 2) + "-" + Convert.ToString(rw["dtTitulo"]).Substring(6, 2)),
-                                           vlParcela = Convert.ToDouble(rw["vlParcela"]),
-                                           nrParcela = Convert.ToInt32(rw["nrParcela"]),
-                                           cdERP = Convert.ToString(rw["cdERP"]),
-                                           dtBaixaERP = rw["dtBaixaERP"].Equals(DBNull.Value) ? (DateTime?)null : Convert.ToDateTime(Convert.ToString(rw["dtBaixaERP"]).Substring(0, 4) + "-" + Convert.ToString(rw["dtBaixaERP"]).Substring(4, 2) + "-" + Convert.ToString(rw["dtBaixaERP"]).Substring(6, 2))
-                                       }).ToList();                
+            //List<TitulosExpress> list = (from rw in Collection.AsEnumerable()
+            //                           select new TitulosExpress()
+            //                           {
+            //                               nrCNPJ = Convert.ToString(rw["nrCNPJ"]),
+            //                               nrNSU = Convert.ToString(rw["nrNSU"]),
+            //                               dtVenda = Convert.ToDateTime(Convert.ToString(rw["dtVenda"]).Substring(0, 4) + "-" + Convert.ToString(rw["dtVenda"]).Substring(4, 2) + "-" + Convert.ToString(rw["dtVenda"]).Substring(6, 2)),
+            //                               cdAdquirente = Convert.ToInt32(rw["cdAdquirente"]),
+            //                               dsBandeira = Convert.ToString(rw["dsBandeira"]),
+            //                               vlVenda = Convert.ToDouble(rw["vlVenda"]),
+            //                               qtParcelas = Convert.ToInt32(rw["qtParcelas"]),
+            //                               dtTitulo = Convert.ToDateTime(Convert.ToString(rw["dtTitulo"]).Substring(0, 4) + "-" + Convert.ToString(rw["dtTitulo"]).Substring(4, 2) + "-" + Convert.ToString(rw["dtTitulo"]).Substring(6, 2)),
+            //                               vlParcela = Convert.ToDouble(rw["vlParcela"]),
+            //                               nrParcela = Convert.ToInt32(rw["nrParcela"]),
+            //                               cdERP = Convert.ToString(rw["cdERP"]),
+            //                               dtBaixaERP = rw["dtBaixaERP"].Equals(DBNull.Value) ? (DateTime?)null : Convert.ToDateTime(Convert.ToString(rw["dtBaixaERP"]).Substring(0, 4) + "-" + Convert.ToString(rw["dtBaixaERP"]).Substring(4, 2) + "-" + Convert.ToString(rw["dtBaixaERP"]).Substring(6, 2))
+            //                           }).ToList();                
 
             retorno.PaginaAtual = pageNumber;
             retorno.ItensPorPagina = pageSize;

@@ -134,18 +134,39 @@ namespace WebApiSpress.Bibliotecas
         /// </summary>
         /// <param name="token"></param>
         /// <returns></returns>
-        public static bool Autenticado(string token)
+        public static bool Autenticado(string token, painel_taxservices_dbContext _dbContext = null)
         {
-            using (var _db = new painel_taxservices_dbContext()){
-
+            painel_taxservices_dbContext _db;
+            if (_dbContext == null)
+            {
+                _db = new painel_taxservices_dbContext();
                 _db.Configuration.ProxyCreationEnabled = false;
+            }
+            else
+                _db = _dbContext;
 
+            try
+            {
                 var verify = _db.LoginAutenticacaos.Where(v => v.token.Equals(token)).Select(v => v).FirstOrDefault();
 
                 if (verify != null)
                     return true;
+
+                return false;
             }
-            return false;
+            catch
+            {
+                return false;
+            }
+            finally
+            {
+                if (_dbContext == null)
+                {
+                    // Fecha conexão
+                    _db.Database.Connection.Close();
+                    _db.Dispose();
+                }
+            }
         }
 
         /// <summary>
@@ -153,15 +174,36 @@ namespace WebApiSpress.Bibliotecas
         /// </summary>
         /// <param name="token"></param>
         /// <returns>Null se o token for inválido</returns>
-        public static webpages_Users GetUser(string token)
+        public static webpages_Users GetUser(string token, painel_taxservices_dbContext _dbContext = null)
         {
-            using (var _db = new painel_taxservices_dbContext())
+            painel_taxservices_dbContext _db;
+            if (_dbContext == null)
             {
+                _db = new painel_taxservices_dbContext();
                 _db.Configuration.ProxyCreationEnabled = false;
+            }
+            else
+                _db = _dbContext;
 
+            try
+            {
                 return _db.LoginAutenticacaos.Where(v => v.token.Equals(token))
                             .Select(v => v.webpages_Users)
                             .FirstOrDefault<webpages_Users>();
+
+            }
+            catch
+            {
+                return null;
+            }
+            finally
+            {
+                if (_dbContext == null)
+                {
+                    // Fecha conexão
+                    _db.Database.Connection.Close();
+                    _db.Dispose();
+                }
             }
             //return _db.LoginAutenticacaos.Where(v => v.token.Equals(token)).Select(v => v.webpages_Users).FirstOrDefault();
         }
@@ -171,10 +213,10 @@ namespace WebApiSpress.Bibliotecas
         /// </summary>
         /// <param name="token"></param>
         /// <returns>0 se o token for inválido</returns>
-        public static Int32 GetIdUser(string token)
+        public static Int32 GetIdUser(string token, painel_taxservices_dbContext _dbContext = null)
         {
-            webpages_Users user = GetUser(token);
-            if (user != null) return (Int32) user.id_users;
+            webpages_Users user = GetUser(token, _dbContext);
+            if (user != null) return (Int32)user.id_users;
             return 0;
         }
 
@@ -183,11 +225,58 @@ namespace WebApiSpress.Bibliotecas
         /// </summary>
         /// <param name="token"></param>
         /// <returns>0 se o token for inválido ou se o usuário não estiver associado a algum grupo</returns>
-        public static Int32 GetIdGrupo(string token)
+        public static Int32 GetIdGrupo(string token, painel_taxservices_dbContext _dbContext = null)
         {
-            webpages_Users user = GetUser(token);
-            if (user != null && user.id_grupo != null) return (Int32) user.id_grupo;
+            webpages_Users user = GetUser(token, _dbContext);
+            if (user != null && user.id_grupo != null) return (Int32)user.id_grupo;
             return 0;
+        }
+
+        public static string GetConnectionString(string token, painel_taxservices_dbContext _dbContext = null)
+        {
+            painel_taxservices_dbContext _db;
+            if (_dbContext == null)
+            {
+                _db = new painel_taxservices_dbContext();
+                _db.Configuration.ProxyCreationEnabled = false;
+            }
+            else
+                _db = _dbContext;
+
+            Int32 IdGrupo = 0;
+            string connectionString = null;
+            try
+            {
+
+                IdGrupo = GetIdGrupo(token, _db);
+                if (IdGrupo > 0)
+                {
+                    connectionString = _db.ConnectionStrings
+                                            .Where(c => c.Id_Grupo == IdGrupo)
+                                            .Where(c => c.Rede == "Wan")
+                                            .Select(c => c.ConnectionStrings)
+                                            .FirstOrDefault<string>();
+
+                }
+            }
+            catch
+            {
+                return null;
+            }
+            finally
+            {
+                if (_dbContext == null)
+                {
+                    // Fecha conexão
+                    _db.Database.Connection.Close();
+                    _db.Dispose();
+                }
+            }
+
+            if (IdGrupo == 0)
+                throw new Exception("Falha ao buscar a String de Conexão, entre em contato com o Administrador.");
+
+            return connectionString;
         }
 
         /// <summary>
@@ -195,9 +284,9 @@ namespace WebApiSpress.Bibliotecas
         /// </summary>
         /// <param name="token"></param>
         /// <returns>"" (string vazia) se o token for inválido ou se o usuário não estiver associado a alguma filial</returns>
-        public static string GetCNPJEmpresa(string token)
+        public static string GetCNPJEmpresa(string token, painel_taxservices_dbContext _dbContext = null)
         {
-            webpages_Users user = GetUser(token);
+            webpages_Users user = GetUser(token, _dbContext);
             if (user != null && user.id_grupo != null && user.nu_cnpjEmpresa != null) return user.nu_cnpjEmpresa;
             return "";
         }
@@ -207,22 +296,36 @@ namespace WebApiSpress.Bibliotecas
         /// </summary>
         /// <param name="token"></param>
         /// <returns>null se o token for inválido ou se o usuário não estiver associado a nenhuma role do novo portal (id > 50)</returns>
-        public static webpages_Roles GetRole(string token)
+        public static webpages_Roles GetRole(string token, painel_taxservices_dbContext _dbContext = null)
         {
-            webpages_Users user = GetUser(token);
-            if (user != null)
+            painel_taxservices_dbContext _db;
+            if (_dbContext == null)
             {
-                using (var _db = new painel_taxservices_dbContext())
+                _db = new painel_taxservices_dbContext();
+                _db.Configuration.ProxyCreationEnabled = false;
+            }
+            else
+                _db = _dbContext;
+
+            webpages_Roles role = null;
+            try
+            {
+                webpages_Users user = GetUser(token, _db);
+
+                if (user != null)
                 {
-                    _db.Configuration.ProxyCreationEnabled = false;
-                    return _db.webpages_UsersInRoles
-                                            .Where(r => r.UserId == user.id_users)
-                                            .Where(r => r.RoleId > 50)
-                                            .Select(r => r.webpages_Roles)
-                                            .FirstOrDefault();
+                    role = _db.webpages_UsersInRoles
+                                .Where(r => r.UserId == user.id_users)
+                                .Where(r => r.RoleId > 50)
+                                .Select(r => r.webpages_Roles)
+                                .FirstOrDefault();
                 }
             }
-            return null;
+            catch
+            {
+                return null;
+            }
+            return role;
         }
 
         /// <summary>
@@ -230,9 +333,9 @@ namespace WebApiSpress.Bibliotecas
         /// </summary>
         /// <param name="token"></param>
         /// <returns>0 se o token for inválido ou se o usuário não estiver associado a nenhuma role do novo portal (id > 50)</returns>
-        public static Int32 GetRoleId(string token)
+        public static Int32 GetRoleId(string token, painel_taxservices_dbContext _dbContext = null)
         {
-            webpages_Roles role = GetRole(token);
+            webpages_Roles role = GetRole(token, _dbContext);
             if (role != null) return role.RoleId;
             return 0;
         }
@@ -242,9 +345,9 @@ namespace WebApiSpress.Bibliotecas
         /// </summary>
         /// <param name="token"></param>
         /// <returns>"" (string vazia) se o token for inválido ou se o usuário não estiver associado a nenhuma role do novo portal (id > 50)</returns>
-        public static String GetRoleName(string token)
+        public static String GetRoleName(string token, painel_taxservices_dbContext _dbContext = null)
         {
-            webpages_Roles role = GetRole(token);
+            webpages_Roles role = GetRole(token, _dbContext);
             if (role != null) return role.RoleName;
             return "";
         }
@@ -254,9 +357,9 @@ namespace WebApiSpress.Bibliotecas
         /// </summary>
         /// <param name="token"></param>
         /// <returns></returns>
-        public static Int32 GetRoleLevel(string token)
+        public static Int32 GetRoleLevel(string token, painel_taxservices_dbContext _dbContext = null)
         {
-            webpages_Roles role = GetRole(token);
+            webpages_Roles role = GetRole(token, _dbContext);
             if (role != null) return role.RoleLevel;
             return 4;
         }
@@ -266,9 +369,9 @@ namespace WebApiSpress.Bibliotecas
         /// </summary>
         /// <param name="token"></param>
         /// <returns></returns>
-        public static Int32 GetRoleLevelMin(string token)
+        public static Int32 GetRoleLevelMin(string token, painel_taxservices_dbContext _dbContext = null)
         {
-            Int32 RoleLevel = GetRoleLevel(token);
+            Int32 RoleLevel = GetRoleLevel(token, _dbContext);
             if (RoleLevel > 1) return RoleLevel + 1;
             return RoleLevel;
         }
@@ -278,9 +381,9 @@ namespace WebApiSpress.Bibliotecas
         /// </summary>
         /// <param name="token"></param>
         /// <returns></returns>
-        public static bool isAtosRole(string token)
+        public static bool isAtosRole(string token, painel_taxservices_dbContext _dbContext = null)
         {
-            Int32 RoleLevel = GetRoleLevel(token);
+            Int32 RoleLevel = GetRoleLevel(token, _dbContext);
             return RoleLevel >= 0 && RoleLevel <= 2;
         }
 
@@ -300,10 +403,10 @@ namespace WebApiSpress.Bibliotecas
         /// </summary>
         /// <param name="token"></param>
         /// <returns></returns>
-        public static bool isAtosRoleVendedor(string token)
+        public static bool isAtosRoleVendedor(string token, painel_taxservices_dbContext _dbContext = null)
         {
-            string RoleName = GetRoleName(token);
-            return isAtosRole(token) && RoleName.ToUpper().Equals("COMERCIAL");
+            string RoleName = GetRoleName(token, _dbContext);
+            return isAtosRole(token, _dbContext) && RoleName.ToUpper().Equals("COMERCIAL");
         }
 
         /// <summary>
@@ -322,22 +425,39 @@ namespace WebApiSpress.Bibliotecas
         /// </summary>
         /// <param name="token"></param>
         /// <returns></returns>
-        public static List<Int32> GetIdsGruposEmpresasVendedor(string token)
+        public static List<Int32> GetIdsGruposEmpresasVendedor(string token, painel_taxservices_dbContext _dbContext = null)
         {
-            List<Int32> lista = new List<Int32>();
- 
-            Int32 UserId = GetIdUser(token);
-
-            using (var _db = new painel_taxservices_dbContext())
+            painel_taxservices_dbContext _db;
+            if (_dbContext == null)
             {
+                _db = new painel_taxservices_dbContext();
                 _db.Configuration.ProxyCreationEnabled = false;
-                lista = _db.grupo_empresa
-                        .Where(g => g.id_vendedor == UserId)
-                        .Select(g => g.id_grupo)
-                        .ToList<Int32>();
-
-                return lista;
             }
+            else
+                _db = _dbContext;
+
+            List<Int32> lista = new List<Int32>();
+
+            try
+            {
+                Int32 UserId = GetIdUser(token, _db);
+                lista = _db.grupo_empresa
+                            .Where(g => g.id_vendedor == UserId)
+                            .Select(g => g.id_grupo)
+                            .ToList<Int32>();
+            }
+            catch { }
+            finally
+            {
+                if (_dbContext == null)
+                {
+                    // Fecha conexão
+                    _db.Database.Connection.Close();
+                    _db.Dispose();
+                }
+            }
+
+            return lista;
         }
 
         /// <summary>
@@ -346,22 +466,42 @@ namespace WebApiSpress.Bibliotecas
         /// <param name="idController"></param>
         /// <param name="ds_method"></param>
         /// <returns>0 se o método não existe para o controller</returns>
-        public static Int32 GetIdMethod(Int32 idController, string ds_method)
+        public static Int32 GetIdMethod(Int32 idController, string ds_method, painel_taxservices_dbContext _dbContext = null)
         {
+            painel_taxservices_dbContext _db;
+            if (_dbContext == null)
+            {
+                _db = new painel_taxservices_dbContext();
+                _db.Configuration.ProxyCreationEnabled = false;
+            }
+            else
+                _db = _dbContext;
+
             Int32 idMethod = 0;
 
-            using (var _db = new painel_taxservices_dbContext())
+            try
             {
-                _db.Configuration.ProxyCreationEnabled = false;
-
-                var method = _db.webpages_Methods.Where(m => m.id_controller == idController)
-                                                 .Where(m => m.ds_method.ToUpper().Equals(ds_method.ToUpper()))
-                                                 .FirstOrDefault();
-
+                webpages_Methods method = _db.webpages_Methods.Where(m => m.id_controller == idController)
+                                                     .Where(m => m.ds_method.ToUpper().Equals(ds_method.ToUpper()))
+                                                     .FirstOrDefault();
                 if (method != null)
                     idMethod = method.id_method;
 
                 return idMethod;
+
+            }
+            catch
+            {
+                return 0;
+            }
+            finally
+            {
+                if (_dbContext == null)
+                {
+                    // Fecha conexão
+                    _db.Database.Connection.Close();
+                    _db.Dispose();
+                }
             }
         }
 
@@ -370,20 +510,41 @@ namespace WebApiSpress.Bibliotecas
         /// </summary>
         /// <param name="token"></param>
         /// <returns></returns>
-        public static Int32 GetIdUltimoControllerAcessado(string token)
+        public static Int32 GetIdUltimoControllerAcessado(string token, painel_taxservices_dbContext _dbContext = null)
         {
-            Int32 UserId = GetIdUser(token);
-
-            if (UserId == 0) return 0;
-
-            using (var _db = new painel_taxservices_dbContext())
+            painel_taxservices_dbContext _db;
+            if (_dbContext == null)
             {
+                _db = new painel_taxservices_dbContext();
                 _db.Configuration.ProxyCreationEnabled = false;
+            }
+            else
+                _db = _dbContext;
+
+            try
+            {
+                Int32 UserId = GetIdUser(token, _db);
+
+                if (UserId == 0) return 0;
+
                 return _db.LogAcesso1
-                            .Where(e => e.idUsers == UserId)
-                            .OrderByDescending(e => e.dtAcesso)
-                            .Select(e => e.idController ?? 0)
-                            .FirstOrDefault();
+                                .Where(e => e.idUsers == UserId)
+                                .OrderByDescending(e => e.dtAcesso)
+                                .Select(e => e.idController ?? 0)
+                                .FirstOrDefault();
+            }
+            catch
+            {
+                return 0;
+            }
+            finally
+            {
+                if (_dbContext == null)
+                {
+                    // Fecha conexão
+                    _db.Database.Connection.Close();
+                    _db.Dispose();
+                }
             }
         }
 
@@ -394,18 +555,38 @@ namespace WebApiSpress.Bibliotecas
         /// <param name="token"></param>
         /// <param name="idController"></param>
         /// <returns></returns>
-        public static bool usuarioTemPermissaoController(string token, Int32 idController)
+        public static bool usuarioTemPermissaoController(string token, Int32 idController, painel_taxservices_dbContext _dbContext = null)
         {
-            Int32 idRole = GetRoleId(token);
-            if (idRole == 0) return false;
-
-            using (var _db = new painel_taxservices_dbContext())
+            painel_taxservices_dbContext _db;
+            if (_dbContext == null)
             {
+                _db = new painel_taxservices_dbContext();
                 _db.Configuration.ProxyCreationEnabled = false;
+            }
+            else
+                _db = _dbContext;
+
+            try
+            {
+                Int32 idRole = GetRoleId(token, _db);
+                if (idRole == 0) return false;
 
                 return _db.webpages_Permissions.Where(p => p.id_roles == idRole)
-                                               .Where(p => p.webpages_Methods.id_controller == idController)
-                                               .Count() > 0;
+                                                .Where(p => p.webpages_Methods.id_controller == idController)
+                                                .Count() > 0;
+            }
+            catch
+            {
+                return false;
+            }
+            finally
+            {
+                if (_dbContext == null)
+                {
+                    // Fecha conexão
+                    _db.Database.Connection.Close();
+                    _db.Dispose();
+                }
             }
         }
 
@@ -416,14 +597,21 @@ namespace WebApiSpress.Bibliotecas
         /// <param name="token"></param>
         /// <param name="idController"></param>
         /// <returns></returns>
-        public static bool usuarioTemPermissaoMetodoController(string token, Int32 idController, string metodo)
+        public static bool usuarioTemPermissaoMetodoController(string token, Int32 idController, string metodo, painel_taxservices_dbContext _dbContext = null)
         {
-            Int32 idRole = GetRoleId(token);
-            if (idRole == 0) return false;
-
-            using (var _db = new painel_taxservices_dbContext())
+            painel_taxservices_dbContext _db;
+            if (_dbContext == null)
             {
+                _db = new painel_taxservices_dbContext();
                 _db.Configuration.ProxyCreationEnabled = false;
+            }
+            else
+                _db = _dbContext;
+
+            try
+            {
+                Int32 idRole = GetRoleId(token, _db);
+                if (idRole == 0) return false;
 
                 metodo = metodo.ToLower();
 
@@ -431,6 +619,20 @@ namespace WebApiSpress.Bibliotecas
                                                .Where(p => p.webpages_Methods.id_controller == idController)
                                                .Where(p => p.webpages_Methods.ds_method.ToLower().Equals(metodo))
                                                .Count() > 0;
+
+            }
+            catch
+            {
+                return false;
+            }
+            finally
+            {
+                if (_dbContext == null)
+                {
+                    // Fecha conexão
+                    _db.Database.Connection.Close();
+                    _db.Dispose();
+                }
             }
         }
 
@@ -440,17 +642,17 @@ namespace WebApiSpress.Bibliotecas
         /// <param name="token"></param>
         /// <param name="id_grupo"></param>
         /// <returns></returns>
-        public static Boolean usuarioPodeSeAssociarAoGrupo(string token, Int32 id_grupo)
+        public static Boolean usuarioPodeSeAssociarAoGrupo(string token, Int32 id_grupo, painel_taxservices_dbContext _dbContext = null)
         {
-            bool isAtosVendedor = isAtosRoleVendedor(token);
+            bool isAtosVendedor = isAtosRoleVendedor(token, _dbContext);
 
             // Perfil ATOS não vendedor pode se associar a qualquer grupo
-            if (isAtosRole(token) && !isAtosVendedor) return true;
+            if (isAtosRole(token, _dbContext) && !isAtosVendedor) return true;
 
             // Perfil ATOS vendedor pode se associar aos grupos de sua "carteira"
             if (isAtosVendedor)
             {
-                List<Int32> list = GetIdsGruposEmpresasVendedor(token);
+                List<Int32> list = GetIdsGruposEmpresasVendedor(token, _dbContext);
                 return list.Contains(id_grupo);
             }
 
@@ -458,56 +660,191 @@ namespace WebApiSpress.Bibliotecas
             return false;
         }
 
+
         /// <summary>
-        /// Retorna o Id do grupo "Otica Santana"
+        /// Retorna o Ids dos grupos com dsAPI "apispress"
         /// </summary>
         /// <returns></returns>
-        public static Int32 GetIdOticaSantana()
+        public static int[] GetIdsGruposSpress(painel_taxservices_dbContext _dbContext = null)
         {
-            using (var _db = new painel_taxservices_dbContext())
+            painel_taxservices_dbContext _db;
+            if (_dbContext == null)
             {
-                grupo_empresa grupoOticaSantana = _db.grupo_empresa.Where(e => e.ds_nome.StartsWith("OTICASANTANA")).FirstOrDefault();
-                if (grupoOticaSantana == null) return 0;
-                return grupoOticaSantana.id_grupo;
+                _db = new painel_taxservices_dbContext();
+                _db.Configuration.ProxyCreationEnabled = false;
             }
-        }
+            else
+                _db = _dbContext;
 
-        /// <summary>
-        /// Retorna true se o grupo que o usuário está associado é a Otica Santana
-        /// </summary>
-        /// <param name="token"></param>
-        /// <returns></returns>
-        public static bool isIdGrupoOticaSantana(string token)
-        {
-            Int32 IdGrupo = GetIdGrupo(token);
-            return IdGrupo > 0 && IdGrupo == GetIdOticaSantana();
-        }
-
-        /// <summary>
-        /// Retorna true se o usuário tem permissão para se associar ao grupo "Otica Santana"
-        /// </summary>
-        /// <param name="token"></param>
-        /// <returns></returns>
-        public static bool usuarioTemPermissaoAssociarOticaSantana(string token)
-        {
-            bool isAtosVendedor = Permissoes.isAtosRoleVendedor(token);
-
-            // Usuário ATOS que não é vendedor tem permissão
-            if (isAtosRole(token) && !isAtosVendedor) return true;
-
-            if (isAtosVendedor)
+            try
             {
-                // Vendedor tem que ter em sua "carteira" o grupo referido
-                Int32 idGrupoOticaSantana = GetIdOticaSantana();
-                if (idGrupoOticaSantana == 0) return false;
-                using (var _db = new painel_taxservices_dbContext())
+                return _db.grupo_empresa.Where(e => e.dsAPI.Equals("apispress")).Select(e => e.id_grupo).ToArray();
+            }
+            catch
+            {
+                return new int[0];
+            }
+            finally
+            {
+                if (_dbContext == null)
                 {
-                    List<Int32> list = GetIdsGruposEmpresasVendedor(token);
-                    return list.Contains(idGrupoOticaSantana);
+                    // Fecha conexão
+                    _db.Database.Connection.Close();
+                    _db.Dispose();
                 }
             }
-            else return isIdGrupoOticaSantana(token); // Usuário Não-Atos tem que estar amarrado ao grupo para ter autorização
         }
+
+        /// <summary>
+        /// Retorna o Id do grupo "TYRESOLES"
+        /// </summary>
+        /// <returns></returns>
+        public static Int32 GetIdTyresoles(painel_taxservices_dbContext _dbContext = null)
+        {
+            painel_taxservices_dbContext _db;
+            if (_dbContext == null)
+            {
+                _db = new painel_taxservices_dbContext();
+                _db.Configuration.ProxyCreationEnabled = false;
+            }
+            else
+                _db = _dbContext;
+
+            try
+            {
+                grupo_empresa grupoTyresoles = _db.grupo_empresa.Where(e => e.ds_nome.StartsWith("TYRESOLES")).FirstOrDefault();
+                if (grupoTyresoles == null) return 0;
+                return grupoTyresoles.id_grupo;
+            }
+            catch
+            {
+                return 0;
+            }
+            finally
+            {
+                if (_dbContext == null)
+                {
+                    // Fecha conexão
+                    _db.Database.Connection.Close();
+                    _db.Dispose();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Retorna true se o grupo que o usuário está associado é o TYRESOLES
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        public static bool isIdGrupoTyresoles(string token, painel_taxservices_dbContext _dbContext = null)
+        {
+            Int32 IdGrupo = GetIdGrupo(token, _dbContext);
+            return IdGrupo > 0 && IdGrupo == GetIdTyresoles(_dbContext);
+        }
+       
+
+        /// <summary>
+        /// Retorna true se o usuário tem permissão para se associar ao grupo "PETROX"
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        public static bool usuarioTemPermissaoAssociarTyresoles(string token, painel_taxservices_dbContext _dbContext = null)
+        {
+            painel_taxservices_dbContext _db;
+            if (_dbContext == null)
+            {
+                _db = new painel_taxservices_dbContext();
+                _db.Configuration.ProxyCreationEnabled = false;
+            }
+            else
+                _db = _dbContext;
+
+            try
+            {
+                bool isAtosVendedor = Permissoes.isAtosRoleVendedor(token, _db);
+
+                // Usuário ATOS que não é vendedor tem permissão
+                if (isAtosRole(token) && !isAtosVendedor) return true;
+
+                if (isAtosVendedor)
+                {
+                    // Vendedor tem que ter em sua "carteira" o grupo referido
+                    Int32 idGrupoPetrox = GetIdTyresoles(_db);
+                    if (idGrupoPetrox == 0) return false;
+                    List<Int32> list = GetIdsGruposEmpresasVendedor(token, _db);
+                    return list.Contains(idGrupoPetrox);
+                }
+                return isIdGrupoTyresoles(token, _db); // Usuário Não-Atos tem que estar amarrado ao grupo para ter autorização
+            }
+            catch
+            {
+                return false;
+            }
+            finally
+            {
+                if (_dbContext == null)
+                {
+                    // Fecha conexão
+                    _db.Database.Connection.Close();
+                    _db.Dispose();
+                }
+            }
+        }
+
+
+        /// <summary>
+        /// Retorna true se o usuário tem permissão para se associar a algum grupo que tem dsAPI "apispress"
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        public static bool usuarioTemPermissaoAssociarGrupoSpress(string token, painel_taxservices_dbContext _dbContext = null)
+        {
+            painel_taxservices_dbContext _db;
+            if (_dbContext == null)
+            {
+                _db = new painel_taxservices_dbContext();
+                _db.Configuration.ProxyCreationEnabled = false;
+            }
+            else
+                _db = _dbContext;
+
+            try
+            {
+                bool isAtosVendedor = Permissoes.isAtosRoleVendedor(token, _db);
+
+                // Usuário ATOS que não é vendedor tem permissão
+                if (isAtosRole(token) && !isAtosVendedor) return true;
+
+                int[] idsGruposSpress = GetIdsGruposSpress(_db);
+
+                if (idsGruposSpress.Length == 0)
+                    return false;
+
+                if (isAtosVendedor)
+                {
+                    // Vendedor tem que ter em sua "carteira" o grupo referido
+                    List<Int32> list = GetIdsGruposEmpresasVendedor(token, _db);
+                    return list.Any(t => idsGruposSpress.Contains(t));
+                }
+
+                Int32 idGrupo = GetIdGrupo(token, _db);
+                return idsGruposSpress.Contains(idGrupo); // Usuário Não-Atos tem que estar amarrado ao grupo para ter autorização
+            }
+            catch
+            {
+                return false;
+            }
+            finally
+            {
+                if (_dbContext == null)
+                {
+                    // Fecha conexão
+                    _db.Database.Connection.Close();
+                    _db.Dispose();
+                }
+            }
+        }
+
     }
 
 }

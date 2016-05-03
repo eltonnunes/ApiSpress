@@ -13,7 +13,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>WebApiSpress</RootNamespace>
     <AssemblyName>WebApiSpress</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <MvcBuildViews>false</MvcBuildViews>
     <UseIISExpress>true</UseIISExpress>
     <IISExpressSSLPort />
@@ -27,6 +27,7 @@
     </UpgradeBackupLocation>
     <OldToolsVersion>12.0</OldToolsVersion>
     <UseGlobalApplicationHostFile />
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -67,27 +68,9 @@
       <HintPath>..\packages\Microsoft.Data.OData.5.6.4\lib\net40\Microsoft.Data.OData.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Mono.Security, Version=4.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756, processorArchitecture=MSIL">
-      <HintPath>..\packages\Npgsql.2.2.6\lib\net45\Mono.Security.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.6.0.4\lib\net45\Newtonsoft.Json.dll</HintPath>
       <Private>True</Private>
-    </Reference>
-    <Reference Include="NFe.Components, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Users\Elton Nunes\Documents\NFe.Components.dll</HintPath>
-    </Reference>
-    <Reference Include="NFe.ConvertTxt">
-      <HintPath>C:\Users\Elton Nunes\Documents\NFe.ConvertTxt.dll</HintPath>
-    </Reference>
-    <Reference Include="NFe.Settings">
-      <HintPath>C:\Users\Elton Nunes\Documents\NFe.Settings.dll</HintPath>
-    </Reference>
-    <Reference Include="NFe_Util_2G, Version=2.0.5.5, Culture=neutral, PublicKeyToken=6369240506ce0263, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Users\Elton Nunes\Documents\NFe_Util_2G.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
@@ -116,8 +99,6 @@
     <Reference Include="System.Web.Entity" />
     <Reference Include="System.Web.ApplicationServices" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Web.Helpers, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.AspNet.WebPages.3.2.3\lib\net45\System.Web.Helpers.dll</HintPath>
       <Private>True</Private>
@@ -166,7 +147,6 @@
       <HintPath>..\packages\Microsoft.AspNet.WebPages.3.2.3\lib\net45\System.Web.WebPages.Razor.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Web" />
     <Reference Include="System.Web.Abstractions" />
     <Reference Include="System.Web.Routing" />
@@ -183,6 +163,7 @@
     <Reference Include="System.Web.Optimization">
       <HintPath>..\packages\Microsoft.AspNet.Web.Optimization.1.0.0\lib\net40\System.Web.Optimization.dll</HintPath>
     </Reference>
+    <Reference Include="System.Xml.Linq" />
     <Reference Include="WebGrease">
       <Private>True</Private>
       <HintPath>..\packages\WebGrease.1.3.0\lib\WebGrease.dll</HintPath>
@@ -191,8 +172,27 @@
       <Private>True</Private>
       <HintPath>..\packages\WebGrease.1.3.0\lib\Antlr3.Runtime.dll</HintPath>
     </Reference>
+    <Reference Include="xunit">
+      <HintPath>..\packages\xunit.1.9.2\lib\net20\xunit.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="App_Packages\XunitShould.4.0.0\AssertContainment.cs" />
+    <Compile Include="App_Packages\XunitShould.4.0.0\AssertEmpty.cs" />
+    <Compile Include="App_Packages\XunitShould.4.0.0\AssertEquality.cs" />
+    <Compile Include="App_Packages\XunitShould.4.0.0\AssertFalse.cs" />
+    <Compile Include="App_Packages\XunitShould.4.0.0\AssertRange.cs" />
+    <Compile Include="App_Packages\XunitShould.4.0.0\AssertReference.cs" />
+    <Compile Include="App_Packages\XunitShould.4.0.0\AssertThrows.cs" />
+    <Compile Include="App_Packages\XunitShould.4.0.0\AssertTrue.cs" />
+    <Compile Include="App_Packages\XunitShould.4.0.0\AssertType.cs" />
+    <Compile Include="App_Packages\XunitShould.4.0.0\Sdk\EnumerableEqualException.cs" />
+    <Compile Include="App_Packages\XunitShould.4.0.0\Sdk\ExceptionComparer.cs" />
+    <Compile Include="App_Packages\XunitShould.4.0.0\Sdk\InRangeException.cs" />
+    <Compile Include="App_Packages\XunitShould.4.0.0\Sdk\NotInRangeException.cs" />
+    <Compile Include="App_Packages\XunitShould.4.0.0\Sdk\RangeException.cs" />
+    <Compile Include="App_Packages\XunitShould.4.0.0\Sdk\XunitException.cs" />
+    <Compile Include="App_Packages\XunitShould.4.0.0\StringComparisonExtensions.cs" />
     <Compile Include="App_Start\BundleConfig.cs" />
     <Compile Include="App_Start\FilterConfig.cs" />
     <Compile Include="App_Start\RouteConfig.cs" />
@@ -229,9 +229,9 @@
     <Compile Include="Bibliotecas\LogAcaoUsuario.cs" />
     <Compile Include="Bibliotecas\LogAcesso.cs" />
     <Compile Include="Bibliotecas\MensagemErro.cs" />
-    <Compile Include="Bibliotecas\nfeRead.cs" />
     <Compile Include="Bibliotecas\Permissoes.cs" />
     <Compile Include="Bibliotecas\UrlAPIs.cs" />
+    <Compile Include="Controllers\Firebird\ConsultaVendasController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\Firebird\ConsultaTitulosController.cs" />
     <Compile Include="Controllers\ValuesController.cs" />
@@ -251,6 +251,7 @@
     <Compile Include="Models\Object\AcessoMetodoAPI.cs" />
     <Compile Include="Models\Object\Almoxarifado.cs" />
     <Compile Include="Models\Object\Cofins.cs" />
+    <Compile Include="Models\Object\ConsultaVendas.cs" />
     <Compile Include="Models\Object\DadosImportacao.cs" />
     <Compile Include="Models\Object\FiltroTitulos.cs" />
     <Compile Include="Models\Object\ICMSIPI.cs" />
@@ -702,6 +703,7 @@
     <Compile Include="Models\Sql\webpages_UsersInRoles.cs" />
     <Compile Include="Models\Titulos.cs" />
     <Compile Include="Negocios\Firebird\GatewayConsultaTitulos.cs" />
+    <Compile Include="Negocios\Firebird\GatewayConsultaVendas.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
