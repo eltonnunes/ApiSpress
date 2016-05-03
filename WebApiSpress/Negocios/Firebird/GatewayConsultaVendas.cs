@@ -80,8 +80,9 @@ namespace WebApiSpress.Negocios.Firebird
                 {
                     conn.Open();
                 }
-                catch
+                catch//(Exception e)
                 {
+                    //throw new Exception("Falha na abertura da conexão (Cliente). " + (e.InnerException == null ? e.Message : e.InnerException.InnerException == null ? e.InnerException.Message : e.InnerException.InnerException.Message));
                     throw new Exception("Falha de comunicação com o servidor (Cliente)");
                 }
 
@@ -130,7 +131,7 @@ namespace WebApiSpress.Negocios.Firebird
                                 cdSacado = r["dsBandeira"].Equals(DBNull.Value) ? null : Convert.ToString(r["dsBandeira"]).Trim(),
                                 dsBandeira = r["dsBandeira"].Equals(DBNull.Value) ? null : Convert.ToString(r["dsBandeira"]).Trim(),
                                 dtVenda = (DateTime)r["dtVenda"],
-                                nrCNPJ = Convert.ToString(r["nrCNPJ"]),
+                                nrCNPJ = Convert.ToString(r["nrCNPJ"]).Trim(),
                                 nrNSU = r["nrNSU"].Equals(DBNull.Value) ? null : Convert.ToString(r["nrNSU"]).Trim(),
                                 qtParcelas = Convert.ToInt32(r["qtParcelas"]),
                                 vlVenda = Convert.ToDecimal(r["vlVenda"])
@@ -180,7 +181,7 @@ namespace WebApiSpress.Negocios.Firebird
                                 cdSacado = r["dsBandeira"].Equals(DBNull.Value) ? null : Convert.ToString(r["dsBandeira"]).Trim(),
                                 dsBandeira = r["dsBandeira"].Equals(DBNull.Value) ? null : Convert.ToString(r["dsBandeira"]).Trim(),
                                 dtVenda = (DateTime)r["dtVenda"],
-                                nrCNPJ = Convert.ToString(r["nrCNPJ"]),
+                                nrCNPJ = Convert.ToString(r["nrCNPJ"]).Trim(),
                                 nrNSU = r["nrNSU"].Equals(DBNull.Value) ? null : Convert.ToString(r["nrNSU"]).Trim(),
                                 qtParcelas = Convert.ToInt32(r["qtParcelas"]),
                                 vlVenda = Convert.ToDecimal(r["vlVenda"])
@@ -189,9 +190,10 @@ namespace WebApiSpress.Negocios.Firebird
                     }
                     
                 }
-                catch
+                catch//(Exception e)
                 {
-                    throw new Exception("Falha de comunicação com o servidor (Cliente)");
+                    //throw new Exception("Falha na consulta das vendas (Cliente). " + (e.InnerException == null ? e.Message : e.InnerException.InnerException == null ? e.InnerException.Message : e.InnerException.InnerException.Message));
+                    throw new Exception("Falha na consulta das vendas (Cliente)");
                 }
                 finally
                 {
