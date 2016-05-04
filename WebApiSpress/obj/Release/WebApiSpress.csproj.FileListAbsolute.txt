@@ -166,3 +166,4 @@ D:\ATOS CAPITAL\Projetos\apispress\WebApiSpress\bin\zh-Hant\System.Spatial.resou
 D:\ATOS CAPITAL\Projetos\apispress\WebApiSpress\obj\Release\WebApiSpress.csproj.App.config
 D:\ATOS CAPITAL\Projetos\apispress\WebApiSpress\obj\Release\WebApiSpress.dll
 D:\ATOS CAPITAL\Projetos\apispress\WebApiSpress\obj\Release\WebApiSpress.pdb
+D:\ATOS CAPITAL\Projetos\apispress\WebApiSpress\obj\Release\WebApiSpress.csprojResolveAssemblyReference.cache

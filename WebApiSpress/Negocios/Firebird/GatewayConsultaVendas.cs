@@ -83,7 +83,7 @@ namespace WebApiSpress.Negocios.Firebird
                 catch//(Exception e)
                 {
                     //throw new Exception("Falha na abertura da conexão (Cliente). " + (e.InnerException == null ? e.Message : e.InnerException.InnerException == null ? e.InnerException.Message : e.InnerException.InnerException.Message));
-                    throw new Exception("Falha de comunicação com o servidor (Cliente)");
+                    throw new Exception("Falha de comunicação com o servidor do Cliente");
                 }
 
                 List<ConsultaVendas> list = new List<ConsultaVendas>();
@@ -190,10 +190,10 @@ namespace WebApiSpress.Negocios.Firebird
                     }
                     
                 }
-                catch//(Exception e)
+                catch(Exception e)
                 {
-                    //throw new Exception("Falha na consulta das vendas (Cliente). " + (e.InnerException == null ? e.Message : e.InnerException.InnerException == null ? e.InnerException.Message : e.InnerException.InnerException.Message));
-                    throw new Exception("Falha na consulta das vendas (Cliente)");
+                    throw new Exception(e.InnerException == null ? e.Message : e.InnerException.InnerException == null ? e.InnerException.Message : e.InnerException.InnerException.Message);
+                    //throw new Exception("Falha na consulta das vendas (Cliente)");
                 }
                 finally
                 {

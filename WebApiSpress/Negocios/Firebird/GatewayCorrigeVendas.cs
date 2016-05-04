@@ -51,7 +51,7 @@ namespace WebApiSpress.Negocios.Firebird
                                 ", R.dtaVenda AS R_dtVenda" +
                                 ", R.nsu AS R_nsu" +
                                 ", B.cdAdquirente AS R_cdAdquirente" +
-                                ", BS.cdSacado AS R_cdSacado" +
+                                ", R.cdSacado AS R_cdSacado" +
                                 ", R.valorVendaBruta AS R_vlVenda" +
                                 ", R.cnpj AS R_cnpj" +
                                 ", R.numParcelaTotal AS R_qtParcelas" +
@@ -68,7 +68,7 @@ namespace WebApiSpress.Negocios.Firebird
                                 " JOIN cliente.empresa E (NOLOCK) ON E.nu_cnpj = R.cnpj" +
                                 " JOIN card.tbBandeira B (NOLOCK) ON B.cdBandeira = R.cdBandeira" +
                                 " JOIN card.tbRecebimentoVenda V (NOLOCK) ON V.idRecebimentoVenda = R.idRecebimentoVenda" +
-                                " LEFT JOIN card.tbBandeiraSacado BS on	BS.cdGrupo = E.id_grupo and BS.cdBandeira = R.cdBandeira" +
+                                //" LEFT JOIN card.tbBandeiraSacado BS on BS.cdGrupo = E.id_grupo and BS.cdBandeira = R.cdBandeira" +
                                 " WHERE R.id IN (" + string.Join(", ", param.idsRecebimento) + ")";
 
                 List<VendasCorrecaoSpress> Collection = new List<VendasCorrecaoSpress>();
@@ -137,7 +137,7 @@ namespace WebApiSpress.Negocios.Firebird
                 }
                 catch
                 {
-                    throw new Exception("Falha de comunicação com o servidor (Cliente)");
+                    throw new Exception("Falha de comunicação com o servidor do Cliente");
                 }
 
                 try
@@ -159,7 +159,7 @@ namespace WebApiSpress.Negocios.Firebird
                         string EXPMONCOD = venda.R_cdSacado == null || venda.V_cdAdquirente == null ? null : venda.R_cdSacado;
                         
                         bool atualizaNsu = venda.R_cdAdquirente != 5 && venda.R_cdAdquirente != 6 && venda.R_cdAdquirente != 11 && venda.R_cdAdquirente != 14;
-                        bool precisaInserir = false;
+                        string dsMensagem = null;
                         bool vendaCredito = true;
                         try
                         {
@@ -230,184 +230,223 @@ namespace WebApiSpress.Negocios.Firebird
                             }
                             #endregion
 
-                            // Consulta parcelas da venda
-                            script = "SELECT *" +
-                                     " FROM pos.RecebimentoParcela P (NOLOCK)" +
-                                     " WHERE P.idRecebimento = " + venda.R_id +
-                                     " ORDER BY P.numParcela";
-                            RecebimentoParcela[] rps;
-                            try
+                            // Avalia se tem títulos gerados para a venda
+                            bool temTitulosGerados = false;
+                            if (vendaCredito)
                             {
-                                rps = _dbAtos.Database.SqlQuery<RecebimentoParcela>(script).ToArray();
+                                script = "SELECT PC.K0" +
+                                         " FROM TCCCACPAR PC" +
+                                         " JOIN TCCCACMOD VC ON PC.RECEBINRO = VC.RECEBINRO" +
+                                                           " AND PC.EXPMONCOD = VC.EXPMONCOD" +
+                                                           " AND PC.CACADMCOD = VC.CACADMCOD" +
+                                                           " AND PC.CACMODDATREGISTRO = VC.CACMODDATREGISTRO" +
+                                                           " AND PC.CACMODSEQ = VC.CACMODSEQ" +
+                                         " WHERE VC.K0 = '" + K0 + "'";
                             }
-                            catch
+                            else
                             {
-                                throw new Exception("Falha de comunicação com o servidor (Atos - Parcelas)");
+                                script = "SELECT PD.K0" +
+                                         " FROM TCCCABPAR PD" +
+                                         " JOIN TCCCABMOD VD ON PD.RECEBINRO = VD.RECEBINRO" +
+                                                           " AND PD.EXPMONCOD = VD.EXPMONCOD" +
+                                                           " AND PD.CABADMCOD = VD.CABADMCOD" +
+                                                           " AND PD.CABMODDATREGISTRO = VD.CABMODDATREGISTRO" +
+                                                           " AND PD.CABMODSEQ = VD.CABMODSEQ" +
+                                         " WHERE VD.K0 = '" + K0 + "'";
+                            }
+                            // Procura parcela no sistema
+                            command = new FbCommand(script, conn);
+                            command.Transaction = transaction;
+
+                            using (FbDataReader dr = command.ExecuteReader())
+                            {
+                                temTitulosGerados = dr.Read();
                             }
 
-                            int incremento = venda.R_qtParcelas > 1 ? 1 : 0;
-                            for (int n = 0; n < venda.R_qtParcelas; n++)
+                            if (temTitulosGerados)
                             {
-                                int numParcela = n + incremento;
-
-                                RecebimentoParcela rp = rps.Where(t => t.numParcela == numParcela).FirstOrDefault();
-
-                                string PK0 = string.Empty;
-
-                                if (vendaCredito)
+                                #region TRATA PARCELAS
+                                // Consulta parcelas da venda
+                                script = "SELECT *" +
+                                         " FROM pos.RecebimentoParcela P (NOLOCK)" +
+                                         " WHERE P.idRecebimento = " + venda.R_id +
+                                         " ORDER BY P.numParcela";
+                                RecebimentoParcela[] rps;
+                                try
                                 {
-                                    script = "SELECT PC.K0" +
-                                             " FROM TCCCACPAR PC" +
-                                             " JOIN TCCCACMOD VC ON PC.RECEBINRO = VC.RECEBINRO" + 
-                                                               " AND PC.EXPMONCOD = VC.EXPMONCOD" + 
-                                                               " AND PC.CACADMCOD = VC.CACADMCOD" +
-                                                               " AND PC.CACMODDATREGISTRO = VC.CACMODDATREGISTRO" +
-                                                               " AND PC.CACMODSEQ = VC.CACMODSEQ" +
-                                             " WHERE VC.K0 = '" + K0 + "'" +
-                                             " AND PC.CACPARNRO IN (" + (venda.R_qtParcelas > 1 ? numParcela.ToString() : "0, 1") + ")";
+                                    rps = _dbAtos.Database.SqlQuery<RecebimentoParcela>(script).ToArray();
                                 }
-                                else
+                                catch
                                 {
-                                    script = "SELECT PD.K0" +
-                                             " FROM TCCCABPAR PD" +
-                                             " JOIN TCCCABMOD VD ON PD.RECEBINRO = VD.RECEBINRO" +
-                                                               " AND PD.EXPMONCOD = VD.EXPMONCOD" +
-                                                               " AND PD.CABADMCOD = VD.CABADMCOD" +
-                                                               " AND PD.CABMODDATREGISTRO = VD.CABMODDATREGISTRO" +
-                                                               " AND PD.CABMODSEQ = VD.CABMODSEQ" +
-                                             " WHERE VD.K0 = '" + K0 + "'" +
-                                             " AND PD.CABPARNRO IN (" + (venda.R_qtParcelas > 1 ? numParcela.ToString() : "0, 1") + ")";
+                                    throw new Exception("Falha de comunicação com o servidor (Atos - Parcelas)");
                                 }
-                                // Procura parcela no sistema
-                                command = new FbCommand(script, conn);
-                                command.Transaction = transaction;
 
-                                using (FbDataReader dr = command.ExecuteReader())
+                                int incremento = venda.R_qtParcelas > 1 ? 1 : 0;
+                                for (int n = 0; n < venda.R_qtParcelas; n++)
                                 {
-                                    if (dr.Read())
+                                    int numParcela = n + incremento;
+
+                                    RecebimentoParcela rp = rps.Where(t => t.numParcela == numParcela).FirstOrDefault();
+
+                                    string PK0 = string.Empty;
+
+                                    if (vendaCredito)
                                     {
-                                        PK0 = Convert.ToString(dr["K0"]);
+                                        script = "SELECT PC.K0" +
+                                                 " FROM TCCCACPAR PC" +
+                                                 " JOIN TCCCACMOD VC ON PC.RECEBINRO = VC.RECEBINRO" +
+                                                                   " AND PC.EXPMONCOD = VC.EXPMONCOD" +
+                                                                   " AND PC.CACADMCOD = VC.CACADMCOD" +
+                                                                   " AND PC.CACMODDATREGISTRO = VC.CACMODDATREGISTRO" +
+                                                                   " AND PC.CACMODSEQ = VC.CACMODSEQ" +
+                                                 " WHERE VC.K0 = '" + K0 + "'" +
+                                                 " AND PC.CACPARNRO IN (" + (venda.R_qtParcelas > 1 ? numParcela.ToString() : "0, 1") + ")";
+                                    }
+                                    else
+                                    {
+                                        script = "SELECT PD.K0" +
+                                                 " FROM TCCCABPAR PD" +
+                                                 " JOIN TCCCABMOD VD ON PD.RECEBINRO = VD.RECEBINRO" +
+                                                                   " AND PD.EXPMONCOD = VD.EXPMONCOD" +
+                                                                   " AND PD.CABADMCOD = VD.CABADMCOD" +
+                                                                   " AND PD.CABMODDATREGISTRO = VD.CABMODDATREGISTRO" +
+                                                                   " AND PD.CABMODSEQ = VD.CABMODSEQ" +
+                                                 " WHERE VD.K0 = '" + K0 + "'" +
+                                                 " AND PD.CABPARNRO IN (" + (venda.R_qtParcelas > 1 ? numParcela.ToString() : "0, 1") + ")";
+                                    }
+                                    // Procura parcela no sistema
+                                    command = new FbCommand(script, conn);
+                                    command.Transaction = transaction;
+
+                                    using (FbDataReader dr = command.ExecuteReader())
+                                    {
+                                        if (dr.Read())
+                                        {
+                                            PK0 = Convert.ToString(dr["K0"]);
+                                        }
+                                    }
+
+                                    // Existe a parcela?
+                                    if (!PK0.Trim().Equals(""))
+                                    {
+                                        // SÓ ATUALIZA SE TIVER PARCELA NO CARD SERVICES
+                                        if (rp != null)
+                                        {
+                                            if (vendaCredito)
+                                            {
+                                                script = "UPDATE TCCCACPAR" +
+                                                         " SET CACPARVLR = " + rp.valorParcelaBruta.ToString(CultureInfo.GetCultureInfo("en-GB")) +
+                                                         ", CACPARDATVENCTO = " + DatabaseQueries.GetIntDate(rp.dtaRecebimento) +
+                                                         " WHERE K0 = '" + PK0 + "'";
+                                            }
+                                            else
+                                            {
+                                                script = "UPDATE TCCCABPAR" +
+                                                         " SET CABPARVLR = " + rp.valorParcelaBruta.ToString(CultureInfo.GetCultureInfo("en-GB")) +
+                                                         ", CABPARDATVENCTO = " + DatabaseQueries.GetIntDate(rp.dtaRecebimento) +
+                                                         " WHERE K0 = '" + PK0 + "'";
+                                            }
+                                            command = new FbCommand(script, conn);
+                                            command.Transaction = transaction;
+
+                                            try
+                                            {
+                                                command.ExecuteNonQuery();
+                                            }
+                                            catch (Exception e)
+                                            {
+                                                throw new Exception("Parcela '" + PK0 + "'. " + (e.InnerException == null ? e.Message : e.InnerException.InnerException == null ? e.InnerException.Message : e.InnerException.InnerException.Message));
+                                            }
+                                        }
+                                    }
+                                    else// if (rp != null)
+                                    {
+                                        // INSERT!
+                                        if (dsMensagem == null) dsMensagem = "";
+                                        else dsMensagem += Environment.NewLine;
+                                        dsMensagem += "É necessário inserir a parcela " + numParcela;
                                     }
                                 }
 
-                                // Existe a parcela?
-                                if (!PK0.Trim().Equals(""))
+                                // Deletar duplicatas indevidas
+                                if (venda.R_qtParcelas > 1)
                                 {
-                                    // SÓ ATUALIZA SE TIVER PARCELA NO CARD SERVICES
-                                    if (rp != null)
+                                    #region DELETA TÍTULOS
+                                    // Busca os pagamentos a serem deletados
+                                    if (vendaCredito)
                                     {
+                                        script = "SELECT PC.K0" +
+                                                 " FROM TCCCACPAR PC" +
+                                                 " JOIN TCCCACMOD VC ON PC.RECEBINRO = VC.RECEBINRO" +
+                                                                   " AND PC.EXPMONCOD = VC.EXPMONCOD" +
+                                                                   " AND PC.CACADMCOD = VC.CACADMCOD" +
+                                                                   " AND PC.CACMODDATREGISTRO = VC.CACMODDATREGISTRO" +
+                                                                   " AND PC.CACMODSEQ = VC.CACMODSEQ" +
+                                                 " WHERE VC.K0 = '" + K0 + "'" +
+                                                 " AND PC.CACPARNRO > " + venda.R_qtParcelas;
+                                    }
+                                    else
+                                    {
+                                        script = "SELECT PD.K0" +
+                                                 " FROM TCCCABPAR PD" +
+                                                 " JOIN TCCCABMOD VD ON PD.RECEBINRO = VD.RECEBINRO" +
+                                                                   " AND PD.EXPMONCOD = VD.EXPMONCOD" +
+                                                                   " AND PD.CABADMCOD = VD.CABADMCOD" +
+                                                                   " AND PD.CABMODDATREGISTRO = VD.CABMODDATREGISTRO" +
+                                                                   " AND PD.CABMODSEQ = VD.CABMODSEQ" +
+                                                 " WHERE VD.K0 = '" + K0 + "'" +
+                                                 " AND PD.CABPARNRO > " + venda.R_qtParcelas;
+                                    }
+
+                                    command = new FbCommand(script, conn);
+                                    command.Transaction = transaction;
+
+                                    List<string> parcelas = new List<string>();
+                                    using (FbDataReader dr = command.ExecuteReader())
+                                    {
+                                        while (dr.Read())
+                                        {
+                                            parcelas.Add(Convert.ToString(dr["K0"]));
+                                        }
+                                    }
+
+                                    if (parcelas.Count > 0)
+                                    {
+                                        // REMOVE AS PARCELAS INDEVIDAS
                                         if (vendaCredito)
                                         {
-                                            script = "UPDATE TCCCACPAR" +
-                                                     " SET CACPARVLR = " + rp.valorParcelaBruta.ToString(CultureInfo.GetCultureInfo("en-GB")) +
-                                                     ", CACPARDATVENCTO = " + DatabaseQueries.GetIntDate(rp.dtaRecebimento) + 
-                                                     " WHERE K0 = '" + PK0 + "'";
+                                            script = "DELETE TCCCACPAR" +
+                                                     " WHERE K0 IN ('" + string.Join("', '", parcelas) + "')";
                                         }
                                         else
                                         {
-                                            script = "UPDATE TCCCABPAR" +
-                                                     " SET CABPARVLR = " + rp.valorParcelaBruta.ToString(CultureInfo.GetCultureInfo("en-GB")) +
-                                                     ", CABPARDATVENCTO = " + DatabaseQueries.GetIntDate(rp.dtaRecebimento) +
-                                                     " WHERE K0 = '" + PK0 + "'";
+                                            script = "DELETE TCCCABPAR" +
+                                                     " WHERE K0 IN ('" + string.Join("', '", parcelas) + "')";
                                         }
+
+                                        // DELETA DUPLICATAS
                                         command = new FbCommand(script, conn);
                                         command.Transaction = transaction;
-
                                         try
                                         {
                                             command.ExecuteNonQuery();
                                         }
                                         catch (Exception e)
                                         {
-                                            throw new Exception("Parcela '" + PK0 + "'. " + (e.InnerException == null ? e.Message : e.InnerException.InnerException == null ? e.InnerException.Message : e.InnerException.InnerException.Message));
+                                            throw new Exception("Parcelas indevidas da venda '" + K0 + "'. " + (e.InnerException == null ? e.Message : e.InnerException.InnerException == null ? e.InnerException.Message : e.InnerException.InnerException.Message));
                                         }
                                     }
-                                }
-                                else// if (rp != null)
-                                {
-                                    // INSERT!
-                                    precisaInserir = true;
-                                }
-                            }
-
-                            // Deletar duplicatas indevidas
-                            if (venda.R_qtParcelas > 1)
-                            {
-                                #region DELETA DUPLICATAS E PAGAMENTOS
-                                // Busca os pagamentos a serem deletados
-                                if (vendaCredito)
-                                {
-                                    script = "SELECT PC.K0" +
-                                             " FROM TCCCACPAR PC" +
-                                             " JOIN TCCCACMOD VC ON PC.RECEBINRO = VC.RECEBINRO" +
-                                                               " AND PC.EXPMONCOD = VC.EXPMONCOD" +
-                                                               " AND PC.CACADMCOD = VC.CACADMCOD" +
-                                                               " AND PC.CACMODDATREGISTRO = VC.CACMODDATREGISTRO" +
-                                                               " AND PC.CACMODSEQ = VC.CACMODSEQ" +
-                                             " WHERE VC.K0 = '" + K0 + "'" +
-                                             " AND PC.CACPARNRO > " + venda.R_qtParcelas;
-                                }
-                                else
-                                {
-                                    script = "SELECT PD.K0" +
-                                             " FROM TCCCABPAR PD" +
-                                             " JOIN TCCCABMOD VD ON PD.RECEBINRO = VD.RECEBINRO" +
-                                                               " AND PD.EXPMONCOD = VD.EXPMONCOD" +
-                                                               " AND PD.CABADMCOD = VD.CABADMCOD" +
-                                                               " AND PD.CABMODDATREGISTRO = VD.CABMODDATREGISTRO" +
-                                                               " AND PD.CABMODSEQ = VD.CABMODSEQ" +
-                                             " WHERE VD.K0 = '" + K0 + "'" +
-                                             " AND PD.CABPARNRO > " + venda.R_qtParcelas;
-                                }
-
-                                command = new FbCommand(script, conn);
-                                command.Transaction = transaction;
-
-                                List<string> parcelas = new List<string>();
-                                using (FbDataReader dr = command.ExecuteReader())
-                                {
-                                    while (dr.Read())
-                                    {
-                                        parcelas.Add(Convert.ToString(dr["K0"]));
-                                    }
-                                }
-
-                                if (parcelas.Count > 0)
-                                {
-                                    // REMOVE AS PARCELAS INDEVIDAS
-                                    if (vendaCredito)
-                                    {
-                                        script = "DELETE TCCCACPAR" +
-                                                 " WHERE K0 IN ('" + string.Join("', '", parcelas) + "')";
-                                    }
-                                    else
-                                    {
-                                        script = "DELETE TCCCABPAR" +
-                                                 " WHERE K0 IN ('" + string.Join("', '", parcelas) + "')";
-                                    }
-
-                                    // DELETA DUPLICATAS
-                                    command = new FbCommand(script, conn);
-                                    command.Transaction = transaction;
-                                    try
-                                    {
-                                        command.ExecuteNonQuery();
-                                    }
-                                    catch (Exception e)
-                                    {
-                                        throw new Exception("Parcelas indevidas da venda '" + K0 + "'. " + (e.InnerException == null ? e.Message : e.InnerException.InnerException == null ? e.InnerException.Message : e.InnerException.InnerException.Message));
-                                    }
+                                    #endregion
                                 }
                                 #endregion
                             }
 
-
-
-
                             // Avalia se sacado deve ser alterado
-                            if(EXPMONCOD != null)
+                            if (EXPMONCOD != null && venda.V_cdSacado != null && !EXPMONCOD.Equals(venda.V_cdSacado))
                             {
-                                precisaInserir = true;
+                                if (dsMensagem == null) dsMensagem = "";
+                                else dsMensagem += Environment.NewLine;
+                                dsMensagem += "É necessário alterar o sacado [" + venda.V_cdSacado + "] para [" + EXPMONCOD + "]";
                                 #region ALTERA SACADO
                                 /*bool novoSacadoCredito = false;
                                 int MCOD = 0;
@@ -520,7 +559,7 @@ namespace WebApiSpress.Negocios.Firebird
                         script = "UPDATE V" +
                                  " SET V.qtParcelas = " + venda.R_qtParcelas +
                                  ", V.vlVenda = " + venda.R_vlVenda.ToString(CultureInfo.GetCultureInfo("en-GB")) +
-                                 ", V.flInsert = " + (precisaInserir ? 1 : 0) +
+                                 ", V.dsMensagem = " + (dsMensagem == null ? "NULL" : "'" + dsMensagem + "'") +
                                  (atualizaNsu ? ", V.nrNSU = '" + venda.R_nsu + "'" : "") +
                                  ", V.dtAjuste = getdate()" +
                                  " FROM card.tbRecebimentoVenda V" +
