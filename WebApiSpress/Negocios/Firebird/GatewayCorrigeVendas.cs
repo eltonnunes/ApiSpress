@@ -158,8 +158,9 @@ namespace WebApiSpress.Negocios.Firebird
                             nsu = null;
                         string nsuAtualizada = venda.R_nsu;
 
-                        //string codResumoVenda
-                        // CACRESNRO
+                        string codResumoVenda = venda.R_codResumoVenda;
+                        if(codResumoVenda != null && codResumoVenda.Length > 9)
+                            codResumoVenda = codResumoVenda.Substring(codResumoVenda.Length - 9);
 
                         string EXPMONCOD = venda.R_cdSacado == null || venda.V_cdAdquirente == null ? null : venda.R_cdSacado;
                         
@@ -210,7 +211,8 @@ namespace WebApiSpress.Negocios.Firebird
                                 script = "UPDATE TCCCACMOD" +
                                          " SET CACMODVLR = " + venda.R_vlVenda.ToString(CultureInfo.GetCultureInfo("en-GB")) +
                                          ", CACMODNROPARCELAS = " + venda.R_qtParcelas +
-                                         (atualizaNsu ? ", CACMODNROCARTAO = '" + venda.R_nsu + "'" : "") + 
+                                         (atualizaNsu ? ", CACMODNROCARTAO = '" + nsuAtualizada + "'" : "") + 
+                                         (codResumoVenda != null ? ", CACRESNRO = " + codResumoVenda : "") +
                                          " WHERE K0 = '" + K0 + "'";
                             }
                             else
@@ -222,6 +224,7 @@ namespace WebApiSpress.Negocios.Firebird
                                          " SET CABMODVLR = " + venda.R_vlVenda.ToString(CultureInfo.GetCultureInfo("en-GB")) +
                                          ", CABMODNROPARCELAS = " + venda.R_qtParcelas +
                                          (atualizaNsu ? ", CABMODNROCARTAO = " + nsuAtualizada : "") +
+                                         (codResumoVenda != null ? ", CABRESNRO = " + codResumoVenda : "") +
                                          " WHERE K0 = '" + K0 + "'";
                             }
                             
