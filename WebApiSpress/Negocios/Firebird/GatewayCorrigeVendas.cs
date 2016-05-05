@@ -96,6 +96,7 @@ namespace WebApiSpress.Negocios.Firebird
                         {
                             R_cdSacado = r["R_cdSacado"].Equals(DBNull.Value) ? null : Convert.ToString(r["R_cdSacado"]),
                             R_cdAdquirente = Convert.ToInt32(r["R_cdAdquirente"]),
+                            R_codResumoVenda = r["R_codResumoVenda"].Equals(DBNull.Value) ? null : Convert.ToString(r["R_codResumoVenda"]),
                             R_cnpj = Convert.ToString(r["R_cnpj"]),
                             R_dtVenda = (DateTime)r["R_dtVenda"],
                             R_id = Convert.ToInt32(r["R_id"]),
@@ -155,6 +156,10 @@ namespace WebApiSpress.Negocios.Firebird
                         string nsu = venda.V_nsu;
                         if (venda.V_nsu.StartsWith("T"))
                             nsu = null;
+                        string nsuAtualizada = venda.R_nsu;
+
+                        //string codResumoVenda
+                        // CACRESNRO
 
                         string EXPMONCOD = venda.R_cdSacado == null || venda.V_cdAdquirente == null ? null : venda.R_cdSacado;
                         
@@ -210,10 +215,13 @@ namespace WebApiSpress.Negocios.Firebird
                             }
                             else
                             {
+                                if (nsuAtualizada.Length > 6)
+                                    nsuAtualizada = nsuAtualizada.Substring(nsuAtualizada.Length - 6);
+
                                 script = "UPDATE TCCCABMOD" +
                                          " SET CABMODVLR = " + venda.R_vlVenda.ToString(CultureInfo.GetCultureInfo("en-GB")) +
                                          ", CABMODNROPARCELAS = " + venda.R_qtParcelas +
-                                         (atualizaNsu ? ", CABMODNROCARTAO = " + Convert.ToInt32(venda.R_nsu) : "") +
+                                         (atualizaNsu ? ", CABMODNROCARTAO = " + nsuAtualizada : "") +
                                          " WHERE K0 = '" + K0 + "'";
                             }
                             
@@ -363,7 +371,7 @@ namespace WebApiSpress.Negocios.Firebird
                                     {
                                         // INSERT!
                                         if (dsMensagem == null) dsMensagem = "";
-                                        else dsMensagem += Environment.NewLine;
+                                        else dsMensagem += Environment.NewLine + Environment.NewLine;
                                         dsMensagem += "É necessário inserir a parcela " + numParcela;
                                     }
                                 }
@@ -445,7 +453,7 @@ namespace WebApiSpress.Negocios.Firebird
                             if (EXPMONCOD != null && venda.V_cdSacado != null && !EXPMONCOD.Equals(venda.V_cdSacado))
                             {
                                 if (dsMensagem == null) dsMensagem = "";
-                                else dsMensagem += Environment.NewLine;
+                                else dsMensagem += Environment.NewLine + Environment.NewLine;
                                 dsMensagem += "É necessário alterar o sacado [" + venda.V_cdSacado + "] para [" + EXPMONCOD + "]";
                                 #region ALTERA SACADO
                                 /*bool novoSacadoCredito = false;
@@ -560,7 +568,7 @@ namespace WebApiSpress.Negocios.Firebird
                                  " SET V.qtParcelas = " + venda.R_qtParcelas +
                                  ", V.vlVenda = " + venda.R_vlVenda.ToString(CultureInfo.GetCultureInfo("en-GB")) +
                                  ", V.dsMensagem = " + (dsMensagem == null ? "NULL" : "'" + dsMensagem + "'") +
-                                 (atualizaNsu ? ", V.nrNSU = '" + venda.R_nsu + "'" : "") +
+                                 (atualizaNsu ? ", V.nrNSU = '" + nsuAtualizada + "'" : "") +
                                  ", V.dtAjuste = getdate()" +
                                  " FROM card.tbRecebimentoVenda V" +
                                  " WHERE V.idRecebimentoVenda = " + venda.V_id;

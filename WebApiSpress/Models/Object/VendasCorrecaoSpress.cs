@@ -12,6 +12,7 @@ namespace WebApiSpress.Models.Object
         public string R_cnpj;
         public string R_nsu;
         public int R_cdAdquirente;
+        public string R_codResumoVenda;
         public DateTime R_dtVenda;
         public string R_cdSacado;
         public decimal R_vlVenda;
