@@ -263,14 +263,17 @@
     <Compile Include="Models\Object\Mensagem.cs" />
     <Compile Include="Models\Object\NaturezaOperacao.cs" />
     <Compile Include="Models\Object\ParamBaixa.cs" />
+    <Compile Include="Models\Object\ParcelaSpress.cs" />
     <Compile Include="Models\Object\PDV.cs" />
     <Compile Include="Models\Object\Pedido.cs" />
     <Compile Include="Models\Object\Pis.cs" />
     <Compile Include="Models\Object\PisCofinsRetorno.cs" />
+    <Compile Include="Models\Object\ResumoSpress.cs" />
     <Compile Include="Models\Object\Retorno.cs" />
     <Compile Include="Models\Object\TitulosAcert.cs" />
     <Compile Include="Models\Firebird\TyresolesContext.cs" />
     <Compile Include="Models\Object\VendasCorrecaoSpress.cs" />
+    <Compile Include="Models\Object\VendaSpress.cs" />
     <Compile Include="Models\Sql\Adquirente.cs" />
     <Compile Include="Models\Sql\agendamento_finalizado.cs" />
     <Compile Include="Models\Sql\Amex.cs" />

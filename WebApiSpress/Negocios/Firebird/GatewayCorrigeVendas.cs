@@ -159,7 +159,7 @@ namespace WebApiSpress.Negocios.Firebird
                             nsu = null;
                         string nsuAtualizada = venda.R_nsu;
 
-                        string codResumoVenda = null; //venda.R_codResumoVenda;
+                        string codResumoVenda = venda.R_codResumoVenda;
                         if(codResumoVenda != null && codResumoVenda.Length > 9)
                             codResumoVenda = codResumoVenda.Substring(codResumoVenda.Length - 9);
 
@@ -167,17 +167,15 @@ namespace WebApiSpress.Negocios.Firebird
                         
                         bool atualizaNsu = venda.R_cdAdquirente != 5 && venda.R_cdAdquirente != 6 && venda.R_cdAdquirente != 11 && venda.R_cdAdquirente != 14;
                         string dsMensagem = null;
-                        bool vendaCredito = false;
 
-
-                        int vADMCOD = 0, vRECEBINRO = 0, vMODDATREGISTRO = 0, vMODSEQ = 0, vPARCODBANATU = 0, vPARCODAGEATU = 0, vMODNROPARCELAS = 0;
-                        string vEXPMONCOD = String.Empty, vPARNROCONATU = String.Empty;
-
+                        VendaSpress vendaSpress = null;
                         try
                         {
-                            // BUSCA A VENDA NA TABELA DE VENDAS À CRÉDITO
-                            script = "SELECT RECEBINRO, CACADMCOD, EXPMONCOD, CACMODDATREGISTRO, CACMODSEQ, CACMODNROPARCELAS" + 
-                                    ", CACMODCODBANATU,	CACMODCODAGEATU, CACMODCODCONATU" +
+                            #region BUSCA A VENDA NAS TABELA DE VENDAS
+
+                            // Busca primeiro na tabela de vendas à crédito
+                            script = "SELECT RECEBINRO, CACADMCOD, EXPMONCOD, CACMODDATREGISTRO, CACMODSEQ, CACMODNROPARCELAS" +
+                                    ", CACMODCODBANATU,	CACMODCODAGEATU, CACMODCODCONATU, CACMODNROCARTAO, CACRESNRO, CACMODIDTSITUACAO" +
                                      " FROM TCCCACMOD" +
                                      " WHERE K0 = '" + K0 + "'";
                             command = new FbCommand(script, conn);
@@ -187,24 +185,32 @@ namespace WebApiSpress.Negocios.Firebird
                             {
                                 if (dr.Read())
                                 {
-                                    vendaCredito = true;
-                                    vADMCOD = Convert.ToInt32(dr["CACADMCOD"]);
-                                    vRECEBINRO = Convert.ToInt32(dr["RECEBINRO"]);
-                                    vEXPMONCOD = Convert.ToString(dr["EXPMONCOD"]);
-                                    vMODSEQ = Convert.ToInt32(dr["CACMODSEQ"]);
-                                    vMODDATREGISTRO = Convert.ToInt32(dr["CACMODDATREGISTRO"]);
-                                    vMODNROPARCELAS = Convert.ToInt32(dr["CACMODNROPARCELAS"]);
-                                    vPARCODBANATU = Convert.ToInt32(dr["CACMODCODBANATU"]);
-                                    vPARCODAGEATU = Convert.ToInt32(dr["CACMODCODAGEATU"]);
-                                    vPARNROCONATU = Convert.ToString(dr["CACMODCODCONATU"]);
+                                    //vendaCredito = true;
+                                    vendaSpress = new VendaSpress()
+                                    {
+                                        TIPO = 'C',
+                                        ADMCOD = Convert.ToInt32(dr["CACADMCOD"]),
+                                        RECEBINRO = Convert.ToInt32(dr["RECEBINRO"]),
+                                        RESNRO = dr["CACRESNRO"].Equals(DBNull.Value) ? 0 : Convert.ToInt32(dr["CACRESNRO"]),
+                                        EXPMONCOD = Convert.ToString(dr["EXPMONCOD"]),
+                                        MODSEQ = Convert.ToInt32(dr["CACMODSEQ"]),
+                                        MODDATREGISTRO = Convert.ToInt32(dr["CACMODDATREGISTRO"]),
+                                        MODNROPARCELAS = Convert.ToInt32(dr["CACMODNROPARCELAS"]),
+                                        PARCODBANATU = Convert.ToInt32(dr["CACMODCODBANATU"]),
+                                        PARCODAGEATU = Convert.ToInt32(dr["CACMODCODAGEATU"]),
+                                        PARNROCONATU = Convert.ToString(dr["CACMODCODCONATU"]),
+                                        MODNROCARTAO = Convert.ToString(dr["CACMODNROCARTAO"]),
+                                        K0 = K0,
+                                        MODIDTSITUACAO = Convert.ToString(dr["CACMODIDTSITUACAO"]),
+                                    };
                                 }
                             }
 
-                            if (!vendaCredito)
+                            if (vendaSpress == null)
                             {
-                                // Verifica se de fato existe na tabela de vendas à débito
+                                // Verifica se existe na tabela de vendas à débito
                                 script = "SELECT RECEBINRO, CABADMCOD, EXPMONCOD, CABMODDATREGISTRO, CABMODSEQ, CABMODNROPARCELAS" +
-                                    ", CABMODCODBANATU,	CABMODCODAGEATU, CABMODCODCONATU" +
+                                    ", CABMODCODBANATU,	CABMODCODAGEATU, CABMODCODCONATU, CABMODNROCARTAO, CABRESNRO, CABMODIDTSITUACAO" +
                                      " FROM TCCCABMOD" +
                                      " WHERE K0 = '" + K0 + "'";
                                 command = new FbCommand(script, conn);
@@ -212,149 +218,119 @@ namespace WebApiSpress.Negocios.Firebird
 
                                 using (FbDataReader dr = command.ExecuteReader())
                                 {
-                                    if (!dr.Read())
+                                    if (dr.Read())
                                     {
-                                        // VENDA NÃO EXISTE!
-
-                                        // Deleta do portal?
-                                        // ...
-
-                                        continue; 
+                                        vendaSpress = new VendaSpress()
+                                        {
+                                            TIPO = 'D',
+                                            ADMCOD = Convert.ToInt32(dr["CABADMCOD"]),
+                                            RECEBINRO = Convert.ToInt32(dr["RECEBINRO"]),
+                                            RESNRO = dr["CABRESNRO"].Equals(DBNull.Value) ? 0 : Convert.ToInt32(dr["CABRESNRO"]),
+                                            EXPMONCOD = Convert.ToString(dr["EXPMONCOD"]),
+                                            MODSEQ = Convert.ToInt32(dr["CABMODSEQ"]),
+                                            MODDATREGISTRO = Convert.ToInt32(dr["CABMODDATREGISTRO"]),
+                                            MODNROPARCELAS = Convert.ToInt32(dr["CABMODNROPARCELAS"]),
+                                            PARCODBANATU = Convert.ToInt32(dr["CABMODCODBANATU"]),
+                                            PARCODAGEATU = Convert.ToInt32(dr["CABMODCODAGEATU"]),
+                                            PARNROCONATU = Convert.ToString(dr["CABMODCODCONATU"]),
+                                            MODNROCARTAO = Convert.ToString(/*Convert.ToInt32(*/dr["CABMODNROCARTAO"]),//),
+                                            K0 = K0,
+                                            MODIDTSITUACAO = Convert.ToString(dr["CABMODIDTSITUACAO"]),
+                                        };
                                     }
-
-                                    vADMCOD = Convert.ToInt32(dr["CABADMCOD"]);
-                                    vRECEBINRO = Convert.ToInt32(dr["RECEBINRO"]);
-                                    vEXPMONCOD = Convert.ToString(dr["EXPMONCOD"]);
-                                    vMODSEQ = Convert.ToInt32(dr["CABMODSEQ"]);
-                                    vMODDATREGISTRO = Convert.ToInt32(dr["CABMODDATREGISTRO"]);
-                                    vMODNROPARCELAS = Convert.ToInt32(dr["CABMODNROPARCELAS"]);
-                                    vPARCODBANATU = Convert.ToInt32(dr["CABMODCODBANATU"]);
-                                    vPARCODAGEATU = Convert.ToInt32(dr["CABMODCODAGEATU"]);
-                                    vPARNROCONATU = Convert.ToString(dr["CABMODCODCONATU"]);
                                 }
-                            }
-
-
-                            #region ATUALIZAR QUANTIDADE DE PARCELAS E VALOR DA VENDA
-                            if (vendaCredito)
-                            {
-                                script = "UPDATE TCCCACMOD" +
-                                         " SET CACMODVLR = " + venda.R_vlVenda.ToString(CultureInfo.GetCultureInfo("en-GB")) +
-                                         ", CACMODNROPARCELAS = " + venda.R_qtParcelas +
-                                         ", CACMODIDTFORMA = '" + (venda.R_qtParcelas == 1 ? "RO" : "PS") + "'" +
-                                         (atualizaNsu ? ", CACMODNROCARTAO = '" + nsuAtualizada + "'" : "") + 
-                                         (codResumoVenda != null ? ", CACRESNRO = " + codResumoVenda : "") +
-                                         " WHERE K0 = '" + K0 + "'";
-                            }
-                            else
-                            {
-                                if (nsuAtualizada.Length > 6)
-                                    nsuAtualizada = nsuAtualizada.Substring(nsuAtualizada.Length - 6);
-
-                                script = "UPDATE TCCCABMOD" +
-                                         " SET CABMODVLR = " + venda.R_vlVenda.ToString(CultureInfo.GetCultureInfo("en-GB")) +
-                                         ", CABMODNROPARCELAS = 1" + //venda.R_qtParcelas +
-                                         (atualizaNsu ? ", CABMODNROCARTAO = " + nsuAtualizada : "") +
-                                         (codResumoVenda != null ? ", CABRESNRO = " + codResumoVenda : "") +
-                                         " WHERE K0 = '" + K0 + "'";
-                            }
-                            
-                            command = new FbCommand(script, conn);
-                            command.Transaction = transaction;
-
-                            try
-                            {
-                                command.ExecuteNonQuery();
-                            }
-                            catch (Exception e)
-                            {
-                                throw new Exception("Venda '" + K0 + "' " + (e.InnerException == null ? e.Message : e.InnerException.InnerException == null ? e.InnerException.Message : e.InnerException.InnerException.Message));
                             }
                             #endregion
 
-                            // Avalia se tem títulos gerados para a venda
-                            bool temTitulosGerados = false;
-                            if (vendaCredito)
+                            // Venda foi encontrada?
+                            if (vendaSpress == null)
                             {
-                                script = "SELECT PC.K0" +
-                                         " FROM TCCCACPAR PC" +
-                                         " JOIN TCCCACMOD VC ON PC.RECEBINRO = VC.RECEBINRO" +
-                                                           " AND PC.EXPMONCOD = VC.EXPMONCOD" +
-                                                           " AND PC.CACADMCOD = VC.CACADMCOD" +
-                                                           " AND PC.CACMODDATREGISTRO = VC.CACMODDATREGISTRO" +
-                                                           " AND PC.CACMODSEQ = VC.CACMODSEQ" +
-                                         " WHERE VC.K0 = '" + K0 + "'";
+                                dsMensagem = "Venda não encontrada no sistema do cliente";
                             }
                             else
                             {
-                                script = "SELECT PD.K0" +
-                                         " FROM TCCCABPAR PD" +
-                                         " JOIN TCCCABMOD VD ON PD.RECEBINRO = VD.RECEBINRO" +
-                                                           " AND PD.EXPMONCOD = VD.EXPMONCOD" +
-                                                           " AND PD.CABADMCOD = VD.CABADMCOD" +
-                                                           " AND PD.CABMODDATREGISTRO = VD.CABMODDATREGISTRO" +
-                                                           " AND PD.CABMODSEQ = VD.CABMODSEQ" +
-                                         " WHERE VD.K0 = '" + K0 + "'";
-                            }
-                            // Procura parcela no sistema
-                            command = new FbCommand(script, conn);
-                            command.Transaction = transaction;
-
-                            using (FbDataReader dr = command.ExecuteReader())
-                            {
-                                temTitulosGerados = dr.Read();
-                            }
-
-                            if (temTitulosGerados)
-                            {
-                                #region TRATA PARCELAS
-                                // Consulta parcelas da venda
-                                script = "SELECT *" +
-                                         " FROM pos.RecebimentoParcela P (NOLOCK)" +
-                                         " WHERE P.idRecebimento = " + venda.R_id +
-                                         " ORDER BY P.numParcela";
-                                RecebimentoParcela[] rps;
-                                try
+                                if(vendaSpress.MODIDTSITUACAO != "AB")
                                 {
-                                    rps = _dbAtos.Database.SqlQuery<RecebimentoParcela>(script).ToArray();
+                                    dsMensagem = "A venda não pode ser corrigida pois seus status não está commo aberto";
+                                    // Não faz mais nada de correção
+                                    vendaSpress = null;
                                 }
-                                catch
+                                // Avalia se sacado deve ser alterado
+                                else if (EXPMONCOD != null && venda.V_cdSacado != null && !EXPMONCOD.Equals(venda.V_cdSacado))
                                 {
-                                    throw new Exception("Falha de comunicação com o servidor (Atos - Parcelas)");
+                                    dsMensagem = "É necessário alterar o sacado [" + venda.V_cdSacado + "] para [" + EXPMONCOD + "]";
+                                    // Não faz mais nada de correção
+                                    vendaSpress = null;
                                 }
-
-                                int incremento = venda.R_qtParcelas > 1 ? 1 : 0;
-                                for (int n = 0; n < venda.R_qtParcelas; n++)
+                                else
                                 {
-                                    int numParcela = n + incremento;
-
-                                    RecebimentoParcela rp = rps.Where(t => t.numParcela == numParcela).FirstOrDefault();
-
-                                    string PK0 = string.Empty;
-
-                                    if (vendaCredito)
+                                    #region CORRIGE A VENDA
+                                    #region ATUALIZAR QUANTIDADE DE PARCELAS E VALOR DA VENDA
+                                    if (vendaSpress.TIPO == 'C')
                                     {
-                                        script = "SELECT PC.K0" +
+                                        script = "UPDATE TCCCACMOD" +
+                                                 " SET CACMODVLR = " + venda.R_vlVenda.ToString(CultureInfo.GetCultureInfo("en-GB")) +
+                                                 ", CACMODNROPARCELAS = " + venda.R_qtParcelas +
+                                                 ", CACMODIDTFORMA = '" + (venda.R_qtParcelas == 1 ? "RO" : "PS") + "'" + // forma da venda parcelada (rotativo/parcelado)
+                                                 (atualizaNsu ? ", CACMODNROCARTAO = '" + nsuAtualizada + "'" : "") +
+                                                 (codResumoVenda != null ? ", CACRESNRO = " + codResumoVenda : "") +
+                                                 " WHERE K0 = '" + K0 + "'";
+                                    }
+                                    else
+                                    {
+                                        if (nsuAtualizada.Length > 6)
+                                            nsuAtualizada = nsuAtualizada.Substring(nsuAtualizada.Length - 6);
+
+                                        script = "UPDATE TCCCABMOD" +
+                                                 " SET CABMODVLR = " + venda.R_vlVenda.ToString(CultureInfo.GetCultureInfo("en-GB")) +
+                                                 ", CABMODNROPARCELAS = 1" + //venda.R_qtParcelas +
+                                                 (atualizaNsu ? ", CABMODNROCARTAO = " + nsuAtualizada : "") +
+                                                 (codResumoVenda != null ? ", CABRESNRO = " + codResumoVenda : "") +
+                                                 " WHERE K0 = '" + K0 + "'";
+                                    }
+
+                                    command = new FbCommand(script, conn);
+                                    command.Transaction = transaction;
+
+                                    try
+                                    {
+                                        command.ExecuteNonQuery();
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        throw new Exception("Venda '" + K0 + "' " + (e.InnerException == null ? e.Message : e.InnerException.InnerException == null ? e.InnerException.Message : e.InnerException.InnerException.Message));
+                                    }
+                                    #endregion
+
+                                    List<ParcelaSpress> parcelasSpress = new List<ParcelaSpress>();
+                                    #region BUSCA PARCELAS NO SPRESS
+                                    if (vendaSpress.TIPO == 'C')
+                                    {
+                                        script = "SELECT PC.K0" + 
+                                                 ", PC.CACPARNRO AS PARNRO" + 
+                                                 ", PC.CACPARDATVENCTO AS PARDATVENCTO" + 
+                                                 ", PC.CACPARVLR AS PARVLR" +
                                                  " FROM TCCCACPAR PC" +
                                                  " JOIN TCCCACMOD VC ON PC.RECEBINRO = VC.RECEBINRO" +
                                                                    " AND PC.EXPMONCOD = VC.EXPMONCOD" +
                                                                    " AND PC.CACADMCOD = VC.CACADMCOD" +
                                                                    " AND PC.CACMODDATREGISTRO = VC.CACMODDATREGISTRO" +
                                                                    " AND PC.CACMODSEQ = VC.CACMODSEQ" +
-                                                 " WHERE VC.K0 = '" + K0 + "'" +
-                                                 " AND PC.CACPARNRO IN (" + (venda.R_qtParcelas > 1 ? numParcela.ToString() : "0, 1") + ")";
+                                                 " WHERE VC.K0 = '" + K0 + "'";
                                     }
                                     else
                                     {
-                                        script = "SELECT PD.K0" +
+                                        script = "SELECT PD.K0" + 
+                                                 ", PD.CABPARNRO AS PARNRO" + 
+                                                 ", PD.CABPARDATVENCTO AS PARDATVENCTO" + 
+                                                 ", PD.CABPARVLR AS PARVLR" +
                                                  " FROM TCCCABPAR PD" +
                                                  " JOIN TCCCABMOD VD ON PD.RECEBINRO = VD.RECEBINRO" +
                                                                    " AND PD.EXPMONCOD = VD.EXPMONCOD" +
                                                                    " AND PD.CABADMCOD = VD.CABADMCOD" +
                                                                    " AND PD.CABMODDATREGISTRO = VD.CABMODDATREGISTRO" +
                                                                    " AND PD.CABMODSEQ = VD.CABMODSEQ" +
-                                                 " WHERE VD.K0 = '" + K0 + "'" +
-                                                 " AND PD.CABPARNRO IN (" + (venda.R_qtParcelas > 1 ? numParcela.ToString() : "0, 1") + ")";
+                                                 " WHERE VD.K0 = '" + K0 + "'";
                                     }
                                     // Procura parcela no sistema
                                     command = new FbCommand(script, conn);
@@ -362,31 +338,121 @@ namespace WebApiSpress.Negocios.Firebird
 
                                     using (FbDataReader dr = command.ExecuteReader())
                                     {
-                                        if (dr.Read())
+                                        while (dr.Read())
                                         {
-                                            PK0 = Convert.ToString(dr["K0"]);
+                                            parcelasSpress.Add(new ParcelaSpress()
+                                            {
+                                                K0 = Convert.ToString(dr["K0"]),
+                                                PARDATVENCTO = Convert.ToInt32(dr["PARDATVENCTO"]),
+                                                PARNRO = Convert.ToInt32(dr["PARNRO"]),
+                                                PARVLR = Convert.ToDecimal(dr["PARVLR"])
+                                            });
                                         }
                                     }
+                                    #endregion
 
-                                    // Existe a parcela?
-                                    if (!PK0.Trim().Equals(""))
+                                    RecebimentoParcela[] rps;
+                                    #region BUSCA PARCELAS NO CARD SERVICES
+                                    script = "SELECT *" +
+                                             " FROM pos.RecebimentoParcela P (NOLOCK)" +
+                                             " WHERE P.idRecebimento = " + venda.R_id +
+                                             " ORDER BY P.numParcela";
+                                    try
                                     {
-                                        // SÓ ATUALIZA SE TIVER PARCELA NO CARD SERVICES
-                                        if (rp != null)
+                                        rps = _dbAtos.Database.SqlQuery<RecebimentoParcela>(script).ToArray();
+                                    }
+                                    catch
+                                    {
+                                        throw new Exception("Falha de comunicação com o servidor (Atos - Parcelas)");
+                                    }
+                                    #endregion
+
+                                    
+                                    decimal taxaDesconto = new decimal(0.0);
+                                    decimal taxaDescontoAntiga = new decimal(0.0);
+                                    #region OBTÉM TAXA DE DESCONTO
+                                    if (vendaSpress.TIPO == 'C')
+                                    {
+                                        script = "SELECT TX.CACTXFVLRTAXROT AS TAXAROTATIVO" +
+                                                 ", TX.CACTXFVLRTAXPAR AS TAXAPARCELADO" +
+                                                 " FROM TCCCACTXF TX" +
+                                                 " WHERE TX.CACADMCOD = " + vendaSpress.ADMCOD +
+                                                 " AND TX.EXPMONCOD = '" + vendaSpress.EXPMONCOD + "'";
+                                    }
+                                    else
+                                    {
+                                        script = "SELECT TX.CABTXFVLRTAXMEN AS TAXA" +
+                                                 " FROM TCCCABTXF TX" +
+                                                 " WHERE TX.CABADMCOD = " + vendaSpress.ADMCOD +
+                                                 " AND TX.EXPMONCOD = '" + vendaSpress.EXPMONCOD + "'";
+                                    }
+                                    command = new FbCommand(script, conn);
+                                    command.Transaction = transaction;
+
+                                    using (FbDataReader dr = command.ExecuteReader())
+                                    {
+                                        if (dr.Read())
                                         {
-                                            if (vendaCredito)
+                                            if (vendaSpress.TIPO == 'C')
+                                            {
+                                                if (venda.R_qtParcelas > 1)
+                                                    taxaDesconto = Convert.ToDecimal(dr["TAXAPARCELADO"]);
+                                                else
+                                                    taxaDesconto = Convert.ToDecimal(dr["TAXAROTATIVO"]);
+
+                                                if (vendaSpress.MODNROPARCELAS > 1)
+                                                    taxaDescontoAntiga = Convert.ToDecimal(dr["TAXAPARCELADO"]);
+                                                else
+                                                    taxaDescontoAntiga = Convert.ToDecimal(dr["TAXAROTATIVO"]);
+                                            }
+                                            else
+                                            {
+                                                taxaDescontoAntiga = taxaDesconto = Convert.ToDecimal(dr["TAXA"]);
+                                            }
+                                        }
+                                    }
+                                    #endregion
+
+                                    #region TRATA PARCELAS
+
+                                    #region ATUALIZA/INSERE TÍTULOS
+                                    List<int> parcelasASeremInseridas = new List<int>();
+                                    int incremento = venda.R_qtParcelas > 1 ? 1 : 0;
+                                    for (int n = 0; n < venda.R_qtParcelas; n++)
+                                    {
+                                        int numParcela = n + incremento;
+
+                                        RecebimentoParcela rp = rps.Where(t => t.numParcela == numParcela).FirstOrDefault();
+
+                                        // Verifica se a parcela existe
+                                        ParcelaSpress parcelaSpress = parcelasSpress.Where(t => t.PARNRO == (n + 1)).FirstOrDefault();
+
+                                        // Tem a parcela no Card Services?
+                                        if (rp == null)
+                                        {
+                                            // Se não tem no Spress, vai ter que reportar que precisa ser inserida
+                                            if (parcelasSpress == null)
+                                                parcelasASeremInseridas.Add(n + 1);
+                                            continue; // só trata
+                                        }
+
+                                        // Existe a parcela?
+                                        if (parcelaSpress != null)
+                                        {
+                                            #region ATUALIZA VALOR E DATA DE VENCIMENTO
+                                            if (vendaSpress.TIPO == 'C')
                                             {
                                                 script = "UPDATE TCCCACPAR" +
                                                          " SET CACPARVLR = " + rp.valorParcelaBruta.ToString(CultureInfo.GetCultureInfo("en-GB")) +
                                                          ", CACPARDATVENCTO = " + DatabaseQueries.GetIntDate(rp.dtaRecebimento) +
-                                                         " WHERE K0 = '" + PK0 + "'";
+                                                         " WHERE K0 = '" + parcelaSpress.K0 + "'";
                                             }
                                             else
                                             {
                                                 script = "UPDATE TCCCABPAR" +
                                                          " SET CABPARVLR = " + rp.valorParcelaBruta.ToString(CultureInfo.GetCultureInfo("en-GB")) +
                                                          ", CABPARDATVENCTO = " + DatabaseQueries.GetIntDate(rp.dtaRecebimento) +
-                                                         " WHERE K0 = '" + PK0 + "'";
+                                                         " WHERE K0 = '" + parcelaSpress.K0 + "'";
                                             }
                                             command = new FbCommand(script, conn);
                                             command.Transaction = transaction;
@@ -397,113 +463,454 @@ namespace WebApiSpress.Negocios.Firebird
                                             }
                                             catch (Exception e)
                                             {
-                                                throw new Exception("Parcela '" + PK0 + "'. " + (e.InnerException == null ? e.Message : e.InnerException.InnerException == null ? e.InnerException.Message : e.InnerException.InnerException.Message));
+                                                throw new Exception("Parcela '" + parcelaSpress.K0 + "'. " + (e.InnerException == null ? e.Message : e.InnerException.InnerException == null ? e.InnerException.Message : e.InnerException.InnerException.Message));
                                             }
-                                        }
-                                    }
-                                    else if (rp != null)
-                                    {
-                                        if (vendaCredito)
-                                        {
-                                            script = "INSERT INTO TCCCACPAR (CACADMCOD, EXPMONCOD, RECEBINRO, CACMODDATREGISTRO" +
-                                                     ", CACMODSEQ, CACPARNRO, CACPARDATVENCTO, CACPARVLR, CACPARIDTSITUACAO" +
-                                                     ", CACPARCODBANATU, CACPARCODAGEATU, CACPARNROCONATU)" +
-                                                     " VALUES (" + vADMCOD + ",  '" + vEXPMONCOD + "'" + 
-                                                     ", " + vRECEBINRO + ", " + vMODDATREGISTRO + 
-                                                     ", " + vMODSEQ + ", " + (n + 1) + 
-                                                     ", " + DatabaseQueries.GetIntDate(rp.dtaRecebimento) + 
-                                                     ", " + rp.valorParcelaBruta.ToString(CultureInfo.GetCultureInfo("en-GB")) +
-                                                     ", 'AB', " + vPARCODBANATU + ", " + vPARCODAGEATU +
-                                                     ", '" + vPARNROCONATU + "')";
+                                            #endregion
                                         }
                                         else
                                         {
-                                            script = "INSERT INTO TCCCABPAR (CABADMCOD, EXPMONCOD, RECEBINRO, CABMODDATREGISTRO" +
-                                                     ", CABMODSEQ, CABPARNRO, CABPARDATVENCTO, CABPARVLR, CABPARIDTSITUACAO" +
-                                                     ", CABPARCODBANATU, CABPARCODAGEATU, CABPARNROCONATU)" +
-                                                     " VALUES (" + vADMCOD + ",  '" + vEXPMONCOD + "'" +
-                                                     ", " + vRECEBINRO + ", " + vMODDATREGISTRO +
-                                                     ", " + vMODSEQ + ", " + (n + 1) +
-                                                     ", " + DatabaseQueries.GetIntDate(rp.dtaRecebimento) +
-                                                     ", " + rp.valorParcelaBruta.ToString(CultureInfo.GetCultureInfo("en-GB")) +
-                                                     ", 'AB', " + vPARCODBANATU + ", " + vPARCODAGEATU +
-                                                     ", '" + vPARNROCONATU + "')";
+                                            #region INSERE A PARCELA NO SPRESS
+                                            if (vendaSpress.TIPO == 'C')
+                                            {
+                                                script = "INSERT INTO TCCCACPAR (CACADMCOD, EXPMONCOD, RECEBINRO, CACMODDATREGISTRO" +
+                                                         ", CACMODSEQ, CACPARNRO, CACPARDATVENCTO, CACPARVLR, CACPARIDTSITUACAO" +
+                                                         ", CACPARCODBANATU, CACPARCODAGEATU, CACPARNROCONATU)" +
+                                                         " VALUES (" + vendaSpress.ADMCOD + ",  '" + vendaSpress.EXPMONCOD + "'" +
+                                                         ", " + vendaSpress.RECEBINRO + ", " + vendaSpress.MODDATREGISTRO +
+                                                         ", " + vendaSpress.MODSEQ + ", " + (n + 1) +
+                                                         ", " + DatabaseQueries.GetIntDate(rp.dtaRecebimento) +
+                                                         ", " + rp.valorParcelaBruta.ToString(CultureInfo.GetCultureInfo("en-GB")) +
+                                                         ", 'AB', " + vendaSpress.PARCODBANATU + ", " + vendaSpress.PARCODAGEATU +
+                                                         ", '" + vendaSpress.PARNROCONATU + "')";
+                                            }
+                                            else
+                                            {
+                                                script = "INSERT INTO TCCCABPAR (CABADMCOD, EXPMONCOD, RECEBINRO, CABMODDATREGISTRO" +
+                                                         ", CABMODSEQ, CABPARNRO, CABPARDATVENCTO, CABPARVLR, CABPARIDTSITUACAO" +
+                                                         ", CABPARCODBANATU, CABPARCODAGEATU, CABPARNROCONATU)" +
+                                                         " VALUES (" + vendaSpress.ADMCOD + ",  '" + vendaSpress.EXPMONCOD + "'" +
+                                                         ", " + vendaSpress.RECEBINRO + ", " + vendaSpress.MODDATREGISTRO +
+                                                         ", " + vendaSpress.MODSEQ + ", " + (n + 1) +
+                                                         ", " + DatabaseQueries.GetIntDate(rp.dtaRecebimento) +
+                                                         ", " + rp.valorParcelaBruta.ToString(CultureInfo.GetCultureInfo("en-GB")) +
+                                                         ", 'AB', " + vendaSpress.PARCODBANATU + ", " + vendaSpress.PARCODAGEATU +
+                                                         ", '" + vendaSpress.PARNROCONATU + "')";
+                                            }
+                                            command = new FbCommand(script, conn);
+                                            command.Transaction = transaction;
+
+                                            try
+                                            {
+                                                command.ExecuteNonQuery();
+                                            }
+                                            catch (Exception e)
+                                            {
+                                                throw new Exception("Nova parcela " + (n + 1) + ". " + (e.InnerException == null ? e.Message : e.InnerException.InnerException == null ? e.InnerException.Message : e.InnerException.InnerException.Message));
+                                            }
+                                            #endregion
                                         }
+
+
+                                        if (codResumoVenda != null)
+                                        {
+                                            decimal valorCalculado = new decimal(0.0);
+                                            if (parcelaSpress != null && vendaSpress.RESNRO != 0 && !vendaSpress.RESNRO.ToString().Equals(codResumoVenda))
+                                            {
+                                                ResumoSpress resumoAntigo = null;
+                                                #region ATUALIZA/REMOVE RESUMO ANTIGO
+                                                // Busca resumo antigo
+                                                if (vendaSpress.TIPO == 'C')
+                                                {
+                                                    script = "SELECT K0, CACADMCOD AS ADMCOD" + 
+                                                             ", CACRESDATVENCTO AS RESDATVENCTO" + 
+                                                             ", CACRESNRO AS RESNRO" + 
+                                                             ", CACRESNROREGISTROS AS RESNROREGISTROS" + 
+                                                             ", CACRESVLR AS RESVLR" + 
+                                                             ", CACRESVLRCALC AS RESVLRCALC" +
+                                                             ", CACRESIDTSITUACAO AS RESIDTSITUACAO" +
+                                                             " FROM TCCCACRES" +
+                                                             " WHERE CACRESNRO = " + vendaSpress.RESNRO +
+                                                             " AND CACRESDATVENCTO = " + parcelaSpress.PARDATVENCTO + 
+                                                             " AND CACADMCOD = " + vendaSpress.ADMCOD;
+                                                }
+                                                else
+                                                {
+                                                    script = "SELECT K0, CABADMCOD AS ADMCOD" +
+                                                             ", CABRESDATVENCTO AS RESDATVENCTO" +
+                                                             ", CABRESNRO AS RESNRO" +
+                                                             ", CABRESNROREGISTROS AS RESNROREGISTROS" +
+                                                             ", CABRESVLR AS RESVLR" +
+                                                             ", CABRESVLRCALC AS RESVLRCALC" +
+                                                             ", CABRESIDTSITUACAO AS RESIDTSITUACAO" +
+                                                             " FROM TCCCABRES" +
+                                                             " WHERE CABRESNRO = " + vendaSpress.RESNRO +
+                                                             " AND CABRESDATVENCTO = " + parcelaSpress.PARDATVENCTO +
+                                                             " AND CABADMCOD = " + vendaSpress.ADMCOD;
+                                                }
+                                                // Avalia resumo no vencimento
+                                                command = new FbCommand(script, conn);
+                                                command.Transaction = transaction;
+
+                                                using (FbDataReader dr = command.ExecuteReader())
+                                                {
+                                                    if (dr.Read())
+                                                    {
+                                                        resumoAntigo = new ResumoSpress()
+                                                        {
+                                                            K0 = Convert.ToString(dr["K0"]),
+                                                            ADMCOD = Convert.ToInt32(dr["ADMCOD"]),
+                                                            RESNRO = Convert.ToInt32(dr["RESNRO"]),
+                                                            RESDATVENCTO = Convert.ToInt32(dr["RESDATVENCTO"]),
+                                                            RESNROREGISTROS = Convert.ToInt32(dr["RESNROREGISTROS"]),
+                                                            RESVLR = Convert.ToDecimal(dr["RESVLR"]),
+                                                            RESVLRCALC = Convert.ToDecimal(dr["RESVLRCALC"]),
+                                                            RESIDTSITUACAO = Convert.ToString(dr["RESIDTSITUACAO"]),
+                                                        };
+                                                    }
+                                                }
+
+                                                
+                                                if (resumoAntigo != null)
+                                                {
+                                                    if (resumoAntigo.RESNROREGISTROS <= 1)
+                                                    {
+                                                        #region DELETA RESUMO ANTIGO
+                                                        if (vendaSpress.TIPO == 'C')
+                                                        {
+                                                            script = "DELETE TCCCACRES" +
+                                                                     " WHERE K0 = '" + resumoAntigo.K0 + "')";
+                                                        }
+                                                        else
+                                                        {
+                                                            script = "DELETE TCCCABRES" +
+                                                                     " WHERE K0 = '" + resumoAntigo.K0 + "')";
+                                                        }
+                                                        command = new FbCommand(script, conn);
+                                                        command.Transaction = transaction;
+                                                        try
+                                                        {
+                                                            command.ExecuteNonQuery();
+                                                        }
+                                                        catch (Exception e)
+                                                        {
+                                                            throw new Exception("Remoção do resumo antigo " + resumoAntigo.RESNRO + " vencimento " + resumoAntigo.RESDATVENCTO + ". " + (e.InnerException == null ? e.Message : e.InnerException.InnerException == null ? e.InnerException.Message : e.InnerException.InnerException.Message));
+                                                        }
+                                                        #endregion
+                                                    }
+                                                    else
+                                                    {
+                                                        #region ATUALIZA RESUMO ANTIGO
+                                                        // Obtém desconto
+                                                        valorCalculado = decimal.Round(parcelaSpress.PARVLR * (new decimal(1.0) - taxaDescontoAntiga / new decimal(100.0)), 2);
+
+                                                        if (vendaSpress.TIPO == 'C')
+                                                        {
+                                                            script = "UPDATE TCCCACRES" +
+                                                                     " SET CACNROREGISTROS = " + (resumoAntigo.RESNROREGISTROS - 1) +
+                                                                     ", CACRESVLR = " + (resumoAntigo.RESVLR > parcelaSpress.PARVLR ? resumoAntigo.RESVLR - parcelaSpress.PARVLR : 0).ToString(CultureInfo.GetCultureInfo("en-GB")) +
+                                                                     ", CACRESVLRCALC = " + (resumoAntigo.RESVLRCALC > valorCalculado ? resumoAntigo.RESVLRCALC - valorCalculado : 0).ToString(CultureInfo.GetCultureInfo("en-GB")) +
+                                                                     " WHERE K0 = '" + resumoAntigo.K0 + "')";
+                                                        }
+                                                        else
+                                                        {
+                                                            script = "UPDATE TCCCABRES" +
+                                                                    " SET CABNROREGISTROS = " + (resumoAntigo.RESNROREGISTROS - 1) +
+                                                                    ", CABRESVLR = " + (resumoAntigo.RESVLR > parcelaSpress.PARVLR ? resumoAntigo.RESVLR - parcelaSpress.PARVLR : 0).ToString(CultureInfo.GetCultureInfo("en-GB")) +
+                                                                    ", CABRESVLRCALC = " + (resumoAntigo.RESVLRCALC > valorCalculado ? resumoAntigo.RESVLRCALC - valorCalculado : 0).ToString(CultureInfo.GetCultureInfo("en-GB")) +
+                                                                    " WHERE K0 = '" + resumoAntigo.K0 + "')";
+                                                        }
+                                                        command = new FbCommand(script, conn);
+                                                        command.Transaction = transaction;
+                                                        try
+                                                        {
+                                                            command.ExecuteNonQuery();
+                                                        }
+                                                        catch (Exception e)
+                                                        {
+                                                            throw new Exception("Atualização do resumo antigo " + resumoAntigo.RESNRO + " vencimento " + resumoAntigo.RESDATVENCTO + ". " + (e.InnerException == null ? e.Message : e.InnerException.InnerException == null ? e.InnerException.Message : e.InnerException.InnerException.Message));
+                                                        }
+                                                        #endregion
+                                                    }
+                                                }
+                                                #endregion
+                                            }
+
+                                            ResumoSpress resumo = null;
+                                            valorCalculado = decimal.Round(rp.valorParcelaBruta * (new decimal(1.0) - taxaDesconto / new decimal(100.0)), 2);
+                                            #region ATUALIZA/INSERE RESUMO ATUAL
+                                            
+                                            // Busca resumo antigo
+                                            if (vendaSpress.TIPO == 'C')
+                                            {
+                                                script = "SELECT K0, CACADMCOD AS ADMCOD" +
+                                                         ", CACRESDATVENCTO AS RESDATVENCTO" +
+                                                         ", CACRESNRO AS RESNRO" +
+                                                         ", CACRESNROREGISTROS AS RESNROREGISTROS" +
+                                                         ", CACRESVLR AS RESVLR" +
+                                                         ", CACRESVLRCALC AS RESVLRCALC" +
+                                                         ", CACRESIDTSITUACAO AS RESIDTSITUACAO" +
+                                                         " FROM TCCCACRES" +
+                                                         " WHERE CACRESNRO = " + codResumoVenda +
+                                                         " AND CACRESDATVENCTO = " + DatabaseQueries.GetIntDate(rp.dtaRecebimento) +
+                                                         " AND CACADMCOD = " + vendaSpress.ADMCOD;
+                                            }
+                                            else
+                                            {
+                                                script = "SELECT K0, CABADMCOD AS ADMCOD" +
+                                                         ", CABRESDATVENCTO AS RESDATVENCTO" +
+                                                         ", CABRESNRO AS RESNRO" +
+                                                         ", CABRESNROREGISTROS AS RESNROREGISTROS" +
+                                                         ", CABRESVLR AS RESVLR" +
+                                                         ", CABRESVLRCALC AS RESVLRCALC" +
+                                                         ", CABRESIDTSITUACAO AS RESIDTSITUACAO" +
+                                                         " FROM TCCCABRES" +
+                                                         " WHERE CABRESNRO = " + codResumoVenda +
+                                                         " AND CABRESDATVENCTO = " + DatabaseQueries.GetIntDate(rp.dtaRecebimento) +
+                                                         " AND CABADMCOD = " + vendaSpress.ADMCOD;
+                                            }
+                                            // Avalia resumo no vencimento
+                                            command = new FbCommand(script, conn);
+                                            command.Transaction = transaction;
+
+                                            using (FbDataReader dr = command.ExecuteReader())
+                                            {
+                                                if (dr.Read())
+                                                {
+                                                    resumo = new ResumoSpress()
+                                                    {
+                                                        K0 = Convert.ToString(dr["K0"]),
+                                                        ADMCOD = Convert.ToInt32(dr["ADMCOD"]),
+                                                        RESNRO = Convert.ToInt32(dr["RESNRO"]),
+                                                        RESDATVENCTO = Convert.ToInt32(dr["RESDATVENCTO"]),
+                                                        RESNROREGISTROS = Convert.ToInt32(dr["RESNROREGISTROS"]),
+                                                        RESVLR = Convert.ToDecimal(dr["RESVLR"]),
+                                                        RESVLRCALC = Convert.ToDecimal(dr["RESVLRCALC"]),
+                                                        RESIDTSITUACAO = Convert.ToString(dr["RESIDTSITUACAO"]),
+                                                    };
+                                                }
+                                            }
+
+                                            if (resumo == null)
+                                            {
+                                                int dataNow = DatabaseQueries.GetIntDate(DateTime.Now);
+                                                #region INSERE NOVO RESUMO
+                                                if (vendaSpress.TIPO == 'C')
+                                                {
+                                                    script = "INSERT INTO TCCCACRES (CACADMCOD, CACRESNRO, CACRESDATVENCTO, CACRESVLR" +
+                                                             ", CACRESVLRCALC, CACRESNROREGISTROS, CACRESIDTSITUACAO, CACRESDATGERACAO" +
+                                                             ", CACRESDATULTOPE, BANCOSCOD, AGEBANCOD, CONCORNRO, CACRESVLRINTEGRA)" +
+                                                            " VALUES (" + vendaSpress.ADMCOD + ", " + codResumoVenda + ", " + DatabaseQueries.GetIntDate(rp.dtaRecebimento) + 
+                                                            ", " + rp.valorParcelaBruta.ToString(CultureInfo.GetCultureInfo("en-GB")) + 
+                                                            ", " + valorCalculado.ToString(CultureInfo.GetCultureInfo("en-GB")) +
+                                                            ", 1, 'AB', " + dataNow +
+                                                            ", " + dataNow + ", 0, 0, '', 0)";
+                                                }
+                                                else
+                                                {
+                                                    script = "INSERT INTO TCCCABRES (CABADMCOD, CABRESNRO, CABRESDATVENCTO, CABRESVLR" +
+                                                              ", CABRESVLRCALC, CABRESNROREGISTROS, CABRESIDTSITUACAO, CABRESDATGERACAO" +
+                                                              ", CABRESDATULTOPE, BANCOSCOD, AGEBANCOD, CONCORNRO, CABRESVLRINTEGRA)" +
+                                                             " VALUES (" + vendaSpress.ADMCOD + ", " + codResumoVenda + ", " + DatabaseQueries.GetIntDate(rp.dtaRecebimento) +
+                                                             ", " + rp.valorParcelaBruta.ToString(CultureInfo.GetCultureInfo("en-GB")) +
+                                                             ", " + valorCalculado.ToString(CultureInfo.GetCultureInfo("en-GB")) +
+                                                             ", 1, 'AB', " + dataNow +
+                                                             ", " + dataNow + ", 0, 0, '', 0)";
+                                                }
+                                                command = new FbCommand(script, conn);
+                                                command.Transaction = transaction;
+                                                try
+                                                {
+                                                    command.ExecuteNonQuery();
+                                                }
+                                                catch (Exception e)
+                                                {
+                                                    throw new Exception("Inserção do resumo " + codResumoVenda + " vencimento " + DatabaseQueries.GetIntDate(rp.dtaRecebimento) + ". " + (e.InnerException == null ? e.Message : e.InnerException.InnerException == null ? e.InnerException.Message : e.InnerException.InnerException.Message));
+                                                }
+                                                #endregion
+                                            }
+                                            else if (vendaSpress.RESNRO != 0 && !vendaSpress.RESNRO.ToString().Equals(codResumoVenda))
+                                            {
+                                                #region ATUALIZA RESUMO ANTIGO
+                                                if (vendaSpress.TIPO == 'C')
+                                                {
+                                                    script = "UPDATE TCCCACRES" +
+                                                             " SET CACNROREGISTROS = " + (resumo.RESNROREGISTROS + 1) +
+                                                             ", CACRESVLR = " + (resumo.RESVLR + rp.valorParcelaBruta).ToString(CultureInfo.GetCultureInfo("en-GB")) +
+                                                             ", CACRESVLRCALC = " + (resumo.RESVLRCALC + valorCalculado).ToString(CultureInfo.GetCultureInfo("en-GB")) +
+                                                             " WHERE K0 = '" + resumo.K0 + "')";
+                                                }
+                                                else
+                                                {
+                                                    script = "UPDATE TCCCABRES" +
+                                                            " SET CABNROREGISTROS = " + (resumo.RESNROREGISTROS - 1) +
+                                                            ", CABRESVLR = " + (resumo.RESVLR - rp.valorParcelaBruta).ToString(CultureInfo.GetCultureInfo("en-GB")) +
+                                                            ", CABRESVLRCALC = " + (resumo.RESVLR - valorCalculado).ToString(CultureInfo.GetCultureInfo("en-GB")) +
+                                                            " WHERE K0 = '" + resumo.K0 + "')";
+                                                }
+                                                command = new FbCommand(script, conn);
+                                                command.Transaction = transaction;
+                                                try
+                                                {
+                                                    command.ExecuteNonQuery();
+                                                }
+                                                catch (Exception e)
+                                                {
+                                                    throw new Exception("Atualização do resumo " + resumo.RESNRO + " vencimento " + resumo.RESDATVENCTO + ". " + (e.InnerException == null ? e.Message : e.InnerException.InnerException == null ? e.InnerException.Message : e.InnerException.InnerException.Message));
+                                                }
+                                                #endregion  
+                                            }
+                                            #endregion
+                                        }
+                                    }
+                                    #endregion
+
+                                    if (parcelasASeremInseridas.Count > 0)
+                                    {
+                                        if (dsMensagem == null) dsMensagem = "";
+                                        else dsMensagem += Environment.NewLine + Environment.NewLine;
+
+                                        if (parcelasASeremInseridas.Count == 1)
+                                            dsMensagem += "É necessário carregar a parcela " + parcelasASeremInseridas.First();
+                                        else
+                                            dsMensagem += "É necessário carregar as parcelas " + string.Join(", ", parcelasASeremInseridas);
+
+                                        dsMensagem += ". Para isso, use o programa Boot ICard";
+                                    }
+
+                                    // Tem parcelas indevidas?
+                                    List<ParcelaSpress> parcelasIndevidas = parcelasSpress.Where(t => t.PARNRO > venda.R_qtParcelas).ToList();
+                                    #region REMOVE TÍTULOS INDEVIDOS
+                                    for (int p = 0; p < parcelasIndevidas.Count; p++)
+                                    {
+                                        ParcelaSpress parcelaSpress = parcelasIndevidas[p];
+
+                                        #region ATUALIZA/DELETA RESUMO
+                                        ResumoSpress resumo = null;
+                                        // Busca resumo antigo
+                                        if (vendaSpress.TIPO == 'C')
+                                        {
+                                            script = "SELECT K0, CACADMCOD AS ADMCOD" +
+                                                        ", CACRESDATVENCTO AS RESDATVENCTO" +
+                                                        ", CACRESNRO AS RESNRO" +
+                                                        ", CACRESNROREGISTROS AS RESNROREGISTROS" +
+                                                        ", CACRESVLR AS RESVLR" +
+                                                        ", CACRESVLRCALC AS RESVLRCALC" +
+                                                        ", CACRESIDTSITUACAO AS RESIDTSITUACAO" +
+                                                        " FROM TCCCACRES" +
+                                                        " WHERE CACRESNRO = " + vendaSpress.RESNRO +
+                                                        " AND CACRESDATVENCTO = " + parcelaSpress.PARDATVENCTO +
+                                                        " AND CACADMCOD = " + vendaSpress.ADMCOD;
+                                        }
+                                        else
+                                        {
+                                            script = "SELECT K0, CABADMCOD AS ADMCOD" +
+                                                        ", CABRESDATVENCTO AS RESDATVENCTO" +
+                                                        ", CABRESNRO AS RESNRO" +
+                                                        ", CABRESNROREGISTROS AS RESNROREGISTROS" +
+                                                        ", CABRESVLR AS RESVLR" +
+                                                        ", CABRESVLRCALC AS RESVLRCALC" +
+                                                        ", CABRESIDTSITUACAO AS RESIDTSITUACAO" +
+                                                        " FROM TCCCABRES" +
+                                                        " WHERE CABRESNRO = " + vendaSpress.RESNRO +
+                                                        " AND CABRESDATVENCTO = " + parcelaSpress.PARDATVENCTO +
+                                                        " AND CABADMCOD = " + vendaSpress.ADMCOD;
+                                        }
+                                        // Avalia resumo no vencimento
                                         command = new FbCommand(script, conn);
                                         command.Transaction = transaction;
 
-                                        try
+                                        using (FbDataReader dr = command.ExecuteReader())
                                         {
-                                            command.ExecuteNonQuery();
+                                            if (dr.Read())
+                                            {
+                                                resumo = new ResumoSpress()
+                                                {
+                                                    K0 = Convert.ToString(dr["K0"]),
+                                                    ADMCOD = Convert.ToInt32(dr["ADMCOD"]),
+                                                    RESNRO = Convert.ToInt32(dr["RESNRO"]),
+                                                    RESDATVENCTO = Convert.ToInt32(dr["RESDATVENCTO"]),
+                                                    RESNROREGISTROS = Convert.ToInt32(dr["RESNROREGISTROS"]),
+                                                    RESVLR = Convert.ToDecimal(dr["RESVLR"]),
+                                                    RESVLRCALC = Convert.ToDecimal(dr["RESVLRCALC"]),
+                                                    RESIDTSITUACAO = Convert.ToString(dr["RESIDTSITUACAO"]),
+                                                };
+                                            }
                                         }
-                                        catch (Exception e)
+
+                                        if (resumo != null)
                                         {
-                                            throw new Exception("Nova parcela " + (n + 1) + ". " + (e.InnerException == null ? e.Message : e.InnerException.InnerException == null ? e.InnerException.Message : e.InnerException.InnerException.Message));
+                                            if (resumo.RESNROREGISTROS <= 1)
+                                            {
+                                                #region DELETA RESUMO ANTIGO
+                                                if (vendaSpress.TIPO == 'C')
+                                                {
+                                                    script = "DELETE TCCCACRES" +
+                                                                " WHERE K0 = '" + resumo.K0 + "')";
+                                                }
+                                                else
+                                                {
+                                                    script = "DELETE TCCCABRES" +
+                                                                " WHERE K0 = '" + resumo.K0 + "')";
+                                                }
+                                                command = new FbCommand(script, conn);
+                                                command.Transaction = transaction;
+                                                try
+                                                {
+                                                    command.ExecuteNonQuery();
+                                                }
+                                                catch (Exception e)
+                                                {
+                                                    throw new Exception("Remoção do resumo indevido " + resumo.RESNRO + " vencimento " + resumo.RESDATVENCTO + ". " + (e.InnerException == null ? e.Message : e.InnerException.InnerException == null ? e.InnerException.Message : e.InnerException.InnerException.Message));
+                                                }
+                                                #endregion
+                                            }
+                                            else
+                                            {
+                                                // Obtém desconto
+                                                decimal valorCalculado = decimal.Round(parcelaSpress.PARVLR * (new decimal(1.0) - taxaDescontoAntiga / new decimal(100.0)), 2);
+
+                                                #region ATUALIZA RESUMO ANTIGO
+                                                if (vendaSpress.TIPO == 'C')
+                                                {
+                                                    script = "UPDATE TCCCACRES" +
+                                                                " SET CACNROREGISTROS = " + (resumo.RESNROREGISTROS - 1) +
+                                                                ", CACRESVLR = " + (resumo.RESVLR > parcelaSpress.PARVLR ? resumo.RESVLR - parcelaSpress.PARVLR : 0).ToString(CultureInfo.GetCultureInfo("en-GB")) +
+                                                                ", CACRESVLRCALC = " + (resumo.RESVLRCALC > valorCalculado ? resumo.RESVLRCALC - valorCalculado : 0).ToString(CultureInfo.GetCultureInfo("en-GB")) +
+                                                                " WHERE K0 = '" + resumo.K0 + "')";
+                                                }
+                                                else
+                                                {
+                                                    script = "UPDATE TCCCABRES" +
+                                                            " SET CABNROREGISTROS = " + (resumo.RESNROREGISTROS - 1) +
+                                                            ", CABRESVLR = " + (resumo.RESVLR > parcelaSpress.PARVLR ? resumo.RESVLR - parcelaSpress.PARVLR : 0).ToString(CultureInfo.GetCultureInfo("en-GB")) +
+                                                            ", CABRESVLRCALC = " + (resumo.RESVLRCALC > valorCalculado ? resumo.RESVLRCALC - valorCalculado : 0).ToString(CultureInfo.GetCultureInfo("en-GB")) +
+                                                            " WHERE K0 = '" + resumo.K0 + "')";
+                                                }
+                                                command = new FbCommand(script, conn);
+                                                command.Transaction = transaction;
+                                                try
+                                                {
+                                                    command.ExecuteNonQuery();
+                                                }
+                                                catch (Exception e)
+                                                {
+                                                    throw new Exception("Atualização do resumo indevido " + resumo.RESNRO + " vencimento " + resumo.RESDATVENCTO + ". " + (e.InnerException == null ? e.Message : e.InnerException.InnerException == null ? e.InnerException.Message : e.InnerException.InnerException.Message));
+                                                }
+                                                #endregion
+                                            }
                                         }
-                                    }
-                                    else// if (rp != null)
-                                    {
-                                        // INSERT!
-                                        if (dsMensagem == null) dsMensagem = "";
-                                        else dsMensagem += Environment.NewLine + Environment.NewLine;
-                                        dsMensagem += "É necessário inserir a parcela " + numParcela;
-                                    }
-                                }
+                                        #endregion
 
-                                // Deletar duplicatas indevidas
-                                if (venda.R_qtParcelas > 1)
-                                {
-                                    #region DELETA TÍTULOS
-                                    // Busca os pagamentos a serem deletados
-                                    if (vendaCredito)
-                                    {
-                                        script = "SELECT PC.K0" +
-                                                 " FROM TCCCACPAR PC" +
-                                                 " JOIN TCCCACMOD VC ON PC.RECEBINRO = VC.RECEBINRO" +
-                                                                   " AND PC.EXPMONCOD = VC.EXPMONCOD" +
-                                                                   " AND PC.CACADMCOD = VC.CACADMCOD" +
-                                                                   " AND PC.CACMODDATREGISTRO = VC.CACMODDATREGISTRO" +
-                                                                   " AND PC.CACMODSEQ = VC.CACMODSEQ" +
-                                                 " WHERE VC.K0 = '" + K0 + "'" +
-                                                 " AND PC.CACPARNRO > " + venda.R_qtParcelas;
-                                    }
-                                    else
-                                    {
-                                        script = "SELECT PD.K0" +
-                                                 " FROM TCCCABPAR PD" +
-                                                 " JOIN TCCCABMOD VD ON PD.RECEBINRO = VD.RECEBINRO" +
-                                                                   " AND PD.EXPMONCOD = VD.EXPMONCOD" +
-                                                                   " AND PD.CABADMCOD = VD.CABADMCOD" +
-                                                                   " AND PD.CABMODDATREGISTRO = VD.CABMODDATREGISTRO" +
-                                                                   " AND PD.CABMODSEQ = VD.CABMODSEQ" +
-                                                 " WHERE VD.K0 = '" + K0 + "'" +
-                                                 " AND PD.CABPARNRO > " + venda.R_qtParcelas;
-                                    }
-
-                                    command = new FbCommand(script, conn);
-                                    command.Transaction = transaction;
-
-                                    List<string> parcelas = new List<string>();
-                                    using (FbDataReader dr = command.ExecuteReader())
-                                    {
-                                        while (dr.Read())
-                                        {
-                                            parcelas.Add(Convert.ToString(dr["K0"]));
-                                        }
-                                    }
-
-                                    if (parcelas.Count > 0)
-                                    {
-                                        // REMOVE AS PARCELAS INDEVIDAS
-                                        if (vendaCredito)
+                                        #region DELETA O TÍTULO
+                                        if (vendaSpress.TIPO == 'C')
                                         {
                                             script = "DELETE TCCCACPAR" +
-                                                     " WHERE K0 IN ('" + string.Join("', '", parcelas) + "')";
+                                                     " WHERE K0 = '" + parcelaSpress.K0 + "'";
                                         }
                                         else
                                         {
                                             script = "DELETE TCCCABPAR" +
-                                                     " WHERE K0 IN ('" + string.Join("', '", parcelas) + "')";
+                                                     " WHERE K0 = '" + parcelaSpress.K0 + "'";
                                         }
 
                                         // DELETA DUPLICATAS
@@ -515,117 +922,17 @@ namespace WebApiSpress.Negocios.Firebird
                                         }
                                         catch (Exception e)
                                         {
-                                            throw new Exception("Parcelas indevidas da venda '" + K0 + "'. " + (e.InnerException == null ? e.Message : e.InnerException.InnerException == null ? e.InnerException.Message : e.InnerException.InnerException.Message));
+                                            throw new Exception("Parcela " + parcelaSpress.PARNRO + " indevida da venda '" + K0 + "'. " + (e.InnerException == null ? e.Message : e.InnerException.InnerException == null ? e.InnerException.Message : e.InnerException.InnerException.Message));
                                         }
+                                        #endregion
                                     }
                                     #endregion
+
+                                    #endregion
+
+                                    #endregion
                                 }
-                                #endregion
                             }
-
-                            // Avalia se sacado deve ser alterado
-                            if (EXPMONCOD != null && venda.V_cdSacado != null && !EXPMONCOD.Equals(venda.V_cdSacado))
-                            {
-                                if (dsMensagem == null) dsMensagem = "";
-                                else dsMensagem += Environment.NewLine + Environment.NewLine;
-                                dsMensagem += "É necessário alterar o sacado [" + venda.V_cdSacado + "] para [" + EXPMONCOD + "]";
-                                #region ALTERA SACADO
-                                /*bool novoSacadoCredito = false;
-                                int MCOD = 0;
-                                // Busca se o sacado é de vendas à crédito
-                                script = "SELECT EC.CACADMCOD from TFICACADE EC WHERE EC.EXPMONCOD LIKE '" + EXPMONCOD + "%'";
-                                command = new FbCommand(script, conn);
-                                command.Transaction = transaction;
-
-                                using (FbDataReader dr = command.ExecuteReader())
-                                {
-                                    while (dr.Read())
-                                    {
-                                        novoSacadoCredito = true;
-                                        MCOD = Convert.ToInt32(dr["CACADMCOD"]);
-                                    }
-                                }
-
-                                if (!novoSacadoCredito)
-                                {
-                                    // Busca se o sacado é de vendas à crédito
-                                    script = "SELECT ED.CABADMCOD from TFICABADE ED WHERE ED.EXPMONCOD LIKE '" + EXPMONCOD + "%'";
-                                    command = new FbCommand(script, conn);
-                                    command.Transaction = transaction;
-
-                                    using (FbDataReader dr = command.ExecuteReader())
-                                    {
-                                        while (dr.Read())
-                                        {
-                                            MCOD = Convert.ToInt32(dr["CABADMCOD"]);
-                                        }
-                                    }
-                                }
-
-
-                                if (MCOD != 0)
-                                {
-                                    if (vendaCredito == novoSacadoCredito)
-                                    {
-                                        // Obtém os campos antigos
-                                        if (vendaCredito)
-                                        {
-                                            script = "SELECT VC.RECEBINRO AS RECEBINRO" +
-                                                     ", VC.CACMODDATREGISTRO AS MODDATREGISTRO" +
-                                                     ", VC.CACMODSEQ AS MODSEQ" +
-                                                     ", VC.CACMOVSEQ AS MOVSEQ" +
-                                                     " FROM TCCCACMOD VC" +
-                                                     " WHERE VC.K0 = '" + K0 + "'";
-                                        }
-                                        else
-                                        {
-                                            script = "SELECT VD.RECEBINRO AS RECEBINRO" +
-                                                     ", VD.CABMODDATREGISTRO AS MODDATREGISTRO" +
-                                                     ", VD.CABMODSEQ AS MODSEQ" +
-                                                     ", VD.CABMOVSEQ AS MOVSEQ" +
-                                                     " FROM TCCCABMOD VD" +
-                                                     " WHERE VC.K0 = '" + K0 + "'";
-                                        }
-
-                                        command = new FbCommand(script, conn);
-                                        command.Transaction = transaction;
-
-                                        int RECEBINRO = 0, MODDATREGISTRO = 0, MODSEQ = 0, MOVSEQ = 0;
-                                        using (FbDataReader dr = command.ExecuteReader())
-                                        {
-                                            if (dr.Read())
-                                            {
-                                                RECEBINRO = Convert.ToInt32(dr["RECEBINRO"]);
-                                                MODDATREGISTRO = Convert.ToInt32(dr["MODDATREGISTRO"]);
-                                                MODSEQ = Convert.ToInt32(dr["MODSEQ"]);
-                                                MOVSEQ = Convert.ToInt32(dr["MOVSEQ"]);
-                                            }
-                                        }
-
-                                        if (RECEBINRO > 0)
-                                        {
-                                            // Atualiza
-
-                                        }
-                                        else
-                                        {
-                                            // Marca o flag
-                                            precisaInserir = true;
-                                        }
-                                    }
-                                    else
-                                    {
-                                        // marca o flag => teria que tirar de uma tabela e inserir em outra
-                                        precisaInserir = true;
-                                    }
-                                }
-                                */
-                                #endregion
-                            }
-
-
-                            // temp
-                            //transaction.Rollback();
 
                             transaction.Commit();
                         }
@@ -637,13 +944,15 @@ namespace WebApiSpress.Negocios.Firebird
 
 
                         // Atualizar tabela tbRecebimentoVenda
-                        // NÃO ALTERA NSU (momentaneamente => Tem adquirentes que não fornecem a NSU - caso da Getnet, Policard e Valecard)
                         script = "UPDATE V" +
-                                 " SET V.qtParcelas = " + venda.R_qtParcelas +
-                                 ", V.vlVenda = " + venda.R_vlVenda.ToString(CultureInfo.GetCultureInfo("en-GB")) +
+                                 " SET V.dtAjuste = getdate()" + 
                                  ", V.dsMensagem = " + (dsMensagem == null ? "NULL" : "'" + dsMensagem + "'") +
-                                 (atualizaNsu ? ", V.nrNSU = '" + nsuAtualizada + "'" : "") +
-                                 ", V.dtAjuste = getdate()" +
+                                 // Só atualiza os campos se a venda foi encontrada no Spress
+                                 (vendaSpress == null ? "" // não atualiza mais nenhum campo
+                                                      : ", V.qtParcelas = " + venda.R_qtParcelas +
+                                                        ", V.vlVenda = " + venda.R_vlVenda.ToString(CultureInfo.GetCultureInfo("en-GB")) +
+                                                        (atualizaNsu ? ", V.nrNSU = '" + nsuAtualizada + "'" : "")
+                                 ) +
                                  " FROM card.tbRecebimentoVenda V" +
                                  " WHERE V.idRecebimentoVenda = " + venda.V_id;
                         try

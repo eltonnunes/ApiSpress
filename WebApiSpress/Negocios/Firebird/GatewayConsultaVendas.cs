@@ -45,15 +45,15 @@ namespace WebApiSpress.Negocios.Firebird
             if (!queryString.TryGetValue("" + (int)CAMPOS.DATA, out outValue))
                 throw new Exception("É necessário informar a data");
 
+            //dtFiltro = "20160215";
+            dtFiltro = dtFiltro.Replace("-", "");
+
             // Obtém a data
             dtFiltro = queryString["" + (int)CAMPOS.DATA];
             string nrCNPJ = null;
             if (queryString.TryGetValue("" + (int)CAMPOS.NRCNPJ, out outValue))
                 nrCNPJ = queryString["" + (int)CAMPOS.NRCNPJ];
-            //dtFiltro = "20160215";
-
-            dtFiltro = dtFiltro.Replace("-", "");
-
+            
             painel_taxservices_dbContext _dbAtos;
             if (_dbAtosContext == null)
             {

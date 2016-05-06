@@ -18,37 +18,41 @@ namespace WebApiSpress.Controllers.Firebird
     {
         public HttpResponseMessage Get(string token, int colecao = 0, int campo = 0, int orderBy = 0, int pageSize = 0, int pageNumber = 0)
         {
-            //tbLogAcessoUsuario log = new tbLogAcessoUsuario();
-
-            try
+            // Abre nova conexão
+            using (painel_taxservices_dbContext _dbAtos = new painel_taxservices_dbContext())
             {
-                //log = Bibliotecas.LogAcaoUsuario.New(token, null, "Get");
+                //tbLogAcessoUsuario log = new tbLogAcessoUsuario();
 
-                Dictionary<string, string> queryString = Request.GetQueryNameValuePairs().ToDictionary(x => x.Key, x => x.Value);
-                HttpResponseMessage retorno = new HttpResponseMessage();
-                if (Permissoes.Autenticado(token) && Permissoes.usuarioTemPermissaoAssociarTyresoles(token))
+                try
                 {
-                    Retorno dados = GatewayConsultaTitulos.Get(token, colecao, campo, orderBy, pageSize, pageNumber, queryString);
-                    //log.codResposta = (int)HttpStatusCode.OK;
-                    //Bibliotecas.LogAcaoUsuario.Save(log);
-                    return Request.CreateResponse<Retorno>(HttpStatusCode.OK, dados);
+                    //log = Bibliotecas.LogAcaoUsuario.New(token, null, "Get", _dbAtos);
+
+                    Dictionary<string, string> queryString = Request.GetQueryNameValuePairs().ToDictionary(x => x.Key, x => x.Value);
+                    HttpResponseMessage retorno = new HttpResponseMessage();
+                    if (Permissoes.Autenticado(token, _dbAtos) && Permissoes.usuarioTemPermissaoAssociarTyresoles(token, _dbAtos))
+                    {
+                        Retorno dados = GatewayConsultaTitulos.Get(token, colecao, campo, orderBy, pageSize, pageNumber, queryString, _dbAtos);
+                        //log.codResposta = (int)HttpStatusCode.OK;
+                        //Bibliotecas.LogAcaoUsuario.Save(log, _dbAtos);
+                        return Request.CreateResponse<Retorno>(HttpStatusCode.OK, dados);
+                    }
+                    else
+                    {
+                        //log.codResposta = (int)HttpStatusCode.Unauthorized;
+                        //Bibliotecas.LogAcaoUsuario.Save(log, _dbAtos);
+                        return Request.CreateResponse(HttpStatusCode.Unauthorized);
+                    }
                 }
-                else
+                catch (Exception e)
                 {
-                    //log.codResposta = (int)HttpStatusCode.Unauthorized;
+                    HttpStatusCode codigoErro = HttpStatusCode.InternalServerError;
+                    if (e.Message.Equals("401")) codigoErro = HttpStatusCode.Unauthorized;
+                    //log.codResposta = (int)codigoErro;
+                    //log.msgErro = e.Message;
                     //Bibliotecas.LogAcaoUsuario.Save(log);
-                    return Request.CreateResponse(HttpStatusCode.Unauthorized);
+                    //throw new HttpResponseException(codigoErro);
+                    return Request.CreateResponse(codigoErro, e.Message);
                 }
-            }
-            catch (Exception e)
-            {
-                HttpStatusCode codigoErro = HttpStatusCode.InternalServerError;
-                if (e.Message.Equals("401")) codigoErro = HttpStatusCode.Unauthorized;
-                //log.codResposta = (int)codigoErro;
-                //log.msgErro = e.Message;
-                //Bibliotecas.LogAcaoUsuario.Save(log);
-                //throw new HttpResponseException(codigoErro);
-                return Request.CreateResponse(codigoErro, e.Message);
             }
         }
     }
