@@ -159,11 +159,11 @@ namespace WebApiSpress.Negocios.Firebird
                         {
                             retorno.Registros.Add(new TitulosExpress
                             {
-                                nrCNPJ = Convert.ToString(dr["nrCNPJ"]),
+                                nrCNPJ = Convert.ToString(dr["nrCNPJ"]).Trim(),
                                 nrNSU = dr["nrNSU"].Equals(DBNull.Value) ? null : Convert.ToString(dr["nrNSU"]),
                                 dtVenda = Convert.ToDateTime(Convert.ToString(dr["dtVenda"]).Substring(0, 4) + "-" + Convert.ToString(dr["dtVenda"]).Substring(4, 2) + "-" + Convert.ToString(dr["dtVenda"]).Substring(6, 2)),
                                 cdAdquirente = Convert.ToInt32(dr["cdAdquirente"]),
-                                dsBandeira = dr["dsBandeira"].Equals(DBNull.Value) ? null : Convert.ToString(dr["dsBandeira"]),
+                                dsBandeira = dr["dsBandeira"].Equals(DBNull.Value) ? null : Convert.ToString(dr["dsBandeira"]).Trim(),
                                 vlVenda = Convert.ToDouble(dr["vlVenda"]),
                                 qtParcelas = Convert.ToInt32(dr["qtParcelas"]),
                                 dtTitulo = Convert.ToDateTime(Convert.ToString(dr["dtTitulo"]).Substring(0, 4) + "-" + Convert.ToString(dr["dtTitulo"]).Substring(4, 2) + "-" + Convert.ToString(dr["dtTitulo"]).Substring(6, 2)),
@@ -225,11 +225,11 @@ namespace WebApiSpress.Negocios.Firebird
                         {
                             retorno.Registros.Add(new TitulosExpress
                             {
-                                nrCNPJ = Convert.ToString(dr["nrCNPJ"]),
+                                nrCNPJ = Convert.ToString(dr["nrCNPJ"]).Trim(),
                                 nrNSU = dr["nrNSU"].Equals(DBNull.Value) ? null : Convert.ToString(dr["nrNSU"]),
                                 dtVenda = Convert.ToDateTime(Convert.ToString(dr["dtVenda"]).Substring(0, 4) + "-" + Convert.ToString(dr["dtVenda"]).Substring(4, 2) + "-" + Convert.ToString(dr["dtVenda"]).Substring(6, 2)),
                                 cdAdquirente = Convert.ToInt32(dr["cdAdquirente"]),
-                                dsBandeira = dr["dsBandeira"].Equals(DBNull.Value) ? null : Convert.ToString(dr["dsBandeira"]),
+                                dsBandeira = dr["dsBandeira"].Equals(DBNull.Value) ? null : Convert.ToString(dr["dsBandeira"]).Trim(),
                                 vlVenda = Convert.ToDouble(dr["vlVenda"]),
                                 qtParcelas = Convert.ToInt32(dr["qtParcelas"]),
                                 dtTitulo = Convert.ToDateTime(Convert.ToString(dr["dtTitulo"]).Substring(0, 4) + "-" + Convert.ToString(dr["dtTitulo"]).Substring(4, 2) + "-" + Convert.ToString(dr["dtTitulo"]).Substring(6, 2)),
