@@ -60,8 +60,11 @@ namespace WebApiSpress.Negocios.Firebird
             string outValue = null;
             String dtFiltro = String.Empty;
 
-            if (queryString.TryGetValue("" + (int)CAMPOS.DATA, out outValue))
-                dtFiltro = queryString["" + (int)CAMPOS.DATA];
+            if (!queryString.TryGetValue("" + (int)CAMPOS.DATA, out outValue))
+                throw new Exception("É necessário informar a data");
+
+            // Obtém a data
+            dtFiltro = queryString["" + (int)CAMPOS.DATA];
 
             //dtFiltro = "20160215";
             dtFiltro = dtFiltro.Replace("-", "");
@@ -115,12 +118,12 @@ namespace WebApiSpress.Negocios.Firebird
                                        " ELSE CAST(cm.CACMODNROCARTAO AS VARCHAR(30))" +
                                   " END) AS nrNSU" +
                                  ", cp.CACMODDATREGISTRO As dtVenda" +
-                                 ", (Case When cm.EXPMONCOD In ('BANESE', 'CAJUCARD', 'DINERS', 'DINERS+7'" +
+                                 /*", (Case When cm.EXPMONCOD In ('BANESE', 'CAJUCARD', 'DINERS', 'DINERS+7'" +
                                                                ", 'ELO', 'FLEXCARD', 'GOODCAR', 'HIPER'" +
                                                                ", 'HIPER+7', 'MASTER', 'MASTER+7', 'SHELL'" +
                                                                ", 'SODEXO', 'TKTCAR', 'VISA', 'VISA+7') Then 1" +
                                         " When cm.EXPMONCOD In ('AMERICAN', 'ELO') Then 2" +
-                                   " End) As cdAdquirente" +
+                                   " End) As cdAdquirente" +*/
                                  ", cm.EXPMONCOD As dsBandeira" +
                                  ", cm.CACMODVLR As vlVenda" +
                                  ", cm.CACMODNROPARCELAS As qtParcelas" +
@@ -141,12 +144,12 @@ namespace WebApiSpress.Negocios.Firebird
                                                  " AND M.CACMODDATREGISTRO = cm.CACMODDATREGISTRO" +
                                                  " AND M.CACMODSEQ = cm.CACMODSEQ" +
                                                  " AND M.CACMOVIDTOPERACAO = 'EN'" + // movimento de entrada
-                                 " Left Join TCCCACMOV cv On cv.CACADMCOD = cp.CACADMCOD" +
-                                                       " AND cv.EXPMONCOD = cp.EXPMONCOD" +
-                                                       " And cv.RECEBINRO = cp.RECEBINRO" +
-                                                       " And cv.CACMODDATREGISTRO = cp.CACMODDATREGISTRO" +
-                                                       " And cv.CACMODSEQ = cp.CACMODSEQ" +
-                                                       " And cv.cacparnro = cp.cacparnro" +
+                                 " Left Join TCCCACMOV cv On cv.CACADMCOD = cm.CACADMCOD" +
+                                                       " AND cv.EXPMONCOD = cm.EXPMONCOD" +
+                                                       " And cv.RECEBINRO = cm.RECEBINRO" +
+                                                       " And cv.CACMODDATREGISTRO = cm.CACMODDATREGISTRO" +
+                                                       " And cv.CACMODSEQ = cm.CACMODSEQ" +
+                                                       " And cv.CACPARNRO = cp.CACPARNRO" +
                                  " Join TCCCAIXA c On c.CAIXACOD = M.CACMODCODAGEATU" +
                                  " Join TGLFILIAL f On f.FILIALCOD = c.FILIALCOD" +
                                  " Where cm.CACMODIDTSITUACAO NOT IN ('CA', 'CR')" + // despreza vendas canceladas
@@ -162,8 +165,9 @@ namespace WebApiSpress.Negocios.Firebird
                                 nrCNPJ = Convert.ToString(dr["nrCNPJ"]).Trim(),
                                 nrNSU = dr["nrNSU"].Equals(DBNull.Value) ? null : Convert.ToString(dr["nrNSU"]),
                                 dtVenda = Convert.ToDateTime(Convert.ToString(dr["dtVenda"]).Substring(0, 4) + "-" + Convert.ToString(dr["dtVenda"]).Substring(4, 2) + "-" + Convert.ToString(dr["dtVenda"]).Substring(6, 2)),
-                                cdAdquirente = Convert.ToInt32(dr["cdAdquirente"]),
+                                //cdAdquirente = Convert.ToInt32(dr["cdAdquirente"]),
                                 dsBandeira = dr["dsBandeira"].Equals(DBNull.Value) ? null : Convert.ToString(dr["dsBandeira"]).Trim(),
+                                cdSacado = dr["dsBandeira"].Equals(DBNull.Value) ? null : Convert.ToString(dr["dsBandeira"]).Trim(),
                                 vlVenda = Convert.ToDouble(dr["vlVenda"]),
                                 qtParcelas = Convert.ToInt32(dr["qtParcelas"]),
                                 dtTitulo = Convert.ToDateTime(Convert.ToString(dr["dtTitulo"]).Substring(0, 4) + "-" + Convert.ToString(dr["dtTitulo"]).Substring(4, 2) + "-" + Convert.ToString(dr["dtTitulo"]).Substring(6, 2)),
@@ -177,15 +181,14 @@ namespace WebApiSpress.Negocios.Firebird
 
                     // VENDAS À DÉBITO
                     sql = " Select SUBSTRING(F.FILIALNROCGC FROM 2 FOR 14) AS nrCNPJ" +
-                        //", ('T' || Cast(cp.K0 As Varchar(33))) As nrNSU" + 
                           ", (CASE WHEN cm.CABMODNROCARTAO IS NULL OR cm.CABMODNROCARTAO = 0" + // CABMODNROCARTAO : INTEGER
                                 " THEN NULL" +
                                 " ELSE CAST(cm.CABMODNROCARTAO AS VARCHAR(30))" +
                            " END) AS nrNSU" +
                           ", cp.CABMODDATREGISTRO As dtVenda" +
-                          ", (Case When cm.EXPMONCOD In ('BANESEDE', 'REDSHOP', 'TCKETCAR', 'VISAELET', 'HIPERDE') Then 1" +
+                          /*", (Case When cm.EXPMONCOD In ('BANESEDE', 'REDSHOP', 'TCKETCAR', 'VISAELET', 'HIPERDE') Then 1" +
                                  " When cm.EXPMONCOD In ('ELODE') Then 2" +
-                            " End) As cdAdquirente" +
+                            " End) As cdAdquirente" +*/
                           ", cm.EXPMONCOD As dsBandeira" +
                           ", cm.CABMODVLR As vlVenda" +
                           ", cm.CABMODNROPARCELAS As qtParcelas" +
@@ -206,12 +209,12 @@ namespace WebApiSpress.Negocios.Firebird
                                           " AND M.CABMODDATREGISTRO = cm.CABMODDATREGISTRO" +
                                           " AND M.CABMODSEQ = cm.CABMODSEQ" +
                                           " AND M.CABMOVIDTOPERACAO = 'EN'" + // movimento de entrada
-                          " Left Join TCCCABMOV cv On cv.CABADMCOD = cp.CABADMCOD" +
-                                                " AND cv.EXPMONCOD = cp.EXPMONCOD" +
-                                                " And cv.RECEBINRO = cp.RECEBINRO" +
-                                                " And cv.CABMODDATREGISTRO = cp.CABMODDATREGISTRO" +
-                                                " And cv.CABMODSEQ = cp.CABMODSEQ" +
-                                                " And cv.caBparnro = cp.caBparnro" +
+                          " Left Join TCCCABMOV cv On cv.CABADMCOD = cm.CABADMCOD" +
+                                                " AND cv.EXPMONCOD = cm.EXPMONCOD" +
+                                                " And cv.RECEBINRO = cm.RECEBINRO" +
+                                                " And cv.CABMODDATREGISTRO = cm.CABMODDATREGISTRO" +
+                                                " And cv.CABMODSEQ = cm.CABMODSEQ" +
+                                                " And cv.CABPARNRO = cp.CABPARNRO" +
                           " Join TCCCAIXA c On c.CAIXACOD = M.CABMODCODAGEATU" +
                           " Join TGLFILIAL f On f.FILIALCOD = c.FILIALCOD" +
                           " Where cm.CABMODIDTSITUACAO NOT IN ('CA', 'CR')" + // despreza vendas canceladas
@@ -228,8 +231,9 @@ namespace WebApiSpress.Negocios.Firebird
                                 nrCNPJ = Convert.ToString(dr["nrCNPJ"]).Trim(),
                                 nrNSU = dr["nrNSU"].Equals(DBNull.Value) ? null : Convert.ToString(dr["nrNSU"]),
                                 dtVenda = Convert.ToDateTime(Convert.ToString(dr["dtVenda"]).Substring(0, 4) + "-" + Convert.ToString(dr["dtVenda"]).Substring(4, 2) + "-" + Convert.ToString(dr["dtVenda"]).Substring(6, 2)),
-                                cdAdquirente = Convert.ToInt32(dr["cdAdquirente"]),
+                                //cdAdquirente = Convert.ToInt32(dr["cdAdquirente"]),
                                 dsBandeira = dr["dsBandeira"].Equals(DBNull.Value) ? null : Convert.ToString(dr["dsBandeira"]).Trim(),
+                                cdSacado = dr["dsBandeira"].Equals(DBNull.Value) ? null : Convert.ToString(dr["dsBandeira"]).Trim(),
                                 vlVenda = Convert.ToDouble(dr["vlVenda"]),
                                 qtParcelas = Convert.ToInt32(dr["qtParcelas"]),
                                 dtTitulo = Convert.ToDateTime(Convert.ToString(dr["dtTitulo"]).Substring(0, 4) + "-" + Convert.ToString(dr["dtTitulo"]).Substring(4, 2) + "-" + Convert.ToString(dr["dtTitulo"]).Substring(6, 2)),

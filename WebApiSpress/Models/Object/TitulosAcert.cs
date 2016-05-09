@@ -12,7 +12,7 @@ namespace WebApiSpress.Models.Object
         public string nrCNPJ { get; set; }
         public string nrNSU { get; set; }
         public Nullable<System.DateTime> dtVenda { get; set; }
-        public int cdAdquirente { get; set; }
+        //public int cdAdquirente { get; set; }
         public string dsBandeira { get; set; }
         public Nullable<double> vlVenda { get; set; }
         public Nullable<int> qtParcelas { get; set; }
@@ -20,6 +20,7 @@ namespace WebApiSpress.Models.Object
         public double vlParcela { get; set; }
         public int nrParcela { get; set; }
         public string cdERP { get; set; }
+        public string cdSacado { get; set; }
         public Nullable<System.DateTime> dtBaixaERP { get; set; }
     }
 

@@ -164,6 +164,6 @@ D:\ATOS CAPITAL\Projetos\apispress\WebApiSpress\bin\ru\System.Spatial.resources.
 D:\ATOS CAPITAL\Projetos\apispress\WebApiSpress\bin\zh-Hans\System.Spatial.resources.dll
 D:\ATOS CAPITAL\Projetos\apispress\WebApiSpress\bin\zh-Hant\System.Spatial.resources.dll
 D:\ATOS CAPITAL\Projetos\apispress\WebApiSpress\obj\Debug\WebApiSpress.csproj.App.config
-D:\ATOS CAPITAL\Projetos\apispress\WebApiSpress\obj\Debug\WebApiSpress.csprojResolveAssemblyReference.cache
 D:\ATOS CAPITAL\Projetos\apispress\WebApiSpress\obj\Debug\WebApiSpress.dll
 D:\ATOS CAPITAL\Projetos\apispress\WebApiSpress\obj\Debug\WebApiSpress.pdb
+D:\ATOS CAPITAL\Projetos\apispress\WebApiSpress\obj\Debug\WebApiSpress.csprojResolveAssemblyReference.cache

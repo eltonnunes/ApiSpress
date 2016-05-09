@@ -396,18 +396,18 @@ namespace WebApiSpress.Negocios.Firebird
                                             if (vendaSpress.TIPO == 'C')
                                             {
                                                 if (venda.R_qtParcelas > 1)
-                                                    taxaDesconto = Convert.ToDecimal(dr["TAXAPARCELADO"]);
+                                                    taxaDesconto = Convert.ToDecimal(dr["TAXAPARCELADO"])/new decimal(100.0);
                                                 else
-                                                    taxaDesconto = Convert.ToDecimal(dr["TAXAROTATIVO"]);
+                                                    taxaDesconto = Convert.ToDecimal(dr["TAXAROTATIVO"])/new decimal(100.0);
 
                                                 if (vendaSpress.MODNROPARCELAS > 1)
-                                                    taxaDescontoAntiga = Convert.ToDecimal(dr["TAXAPARCELADO"]);
+                                                    taxaDescontoAntiga = Convert.ToDecimal(dr["TAXAPARCELADO"])/new decimal(100.0);
                                                 else
-                                                    taxaDescontoAntiga = Convert.ToDecimal(dr["TAXAROTATIVO"]);
+                                                    taxaDescontoAntiga = Convert.ToDecimal(dr["TAXAROTATIVO"])/new decimal(100.0);
                                             }
                                             else
                                             {
-                                                taxaDescontoAntiga = taxaDesconto = Convert.ToDecimal(dr["TAXA"]);
+                                                taxaDescontoAntiga = taxaDesconto = Convert.ToDecimal(dr["TAXA"])/new decimal(100.0);
                                             }
                                         }
                                     }
@@ -575,7 +575,7 @@ namespace WebApiSpress.Negocios.Firebird
                                                     if (resumoAntigo.RESNROREGISTROS <= 1)
                                                     {
                                                         #region DELETA RESUMO ANTIGO
-                                                        if (vendaSpress.TIPO == 'C')
+                                                        /*if (vendaSpress.TIPO == 'C')
                                                         {
                                                             script = "DELETE TCCCACRES" +
                                                                      " WHERE K0 = '" + resumoAntigo.K0 + "')";
@@ -594,14 +594,14 @@ namespace WebApiSpress.Negocios.Firebird
                                                         catch (Exception e)
                                                         {
                                                             throw new Exception("Remoção do resumo antigo " + resumoAntigo.RESNRO + " vencimento " + resumoAntigo.RESDATVENCTO + ". " + (e.InnerException == null ? e.Message : e.InnerException.InnerException == null ? e.InnerException.Message : e.InnerException.InnerException.Message));
-                                                        }
+                                                        }*/
                                                         #endregion
                                                     }
                                                     else
                                                     {
                                                         #region ATUALIZA RESUMO ANTIGO
                                                         // Obtém desconto
-                                                        valorCalculado = decimal.Round(parcelaSpress.PARVLR * (new decimal(1.0) - taxaDescontoAntiga / new decimal(100.0)), 2);
+                                                        valorCalculado = decimal.Round(parcelaSpress.PARVLR * (new decimal(1.0) - taxaDescontoAntiga), 2);
 
                                                         if (vendaSpress.TIPO == 'C')
                                                         {
@@ -636,7 +636,7 @@ namespace WebApiSpress.Negocios.Firebird
                                             }
 
                                             ResumoSpress resumo = null;
-                                            valorCalculado = decimal.Round(rp.valorParcelaBruta * (new decimal(1.0) - taxaDesconto / new decimal(100.0)), 2);
+                                            valorCalculado = decimal.Round(rp.valorParcelaBruta * (new decimal(1.0) - taxaDesconto), 2);
                                             #region ATUALIZA/INSERE RESUMO ATUAL
                                             
                                             // Busca resumo antigo
@@ -842,7 +842,7 @@ namespace WebApiSpress.Negocios.Firebird
                                             if (resumo.RESNROREGISTROS <= 1)
                                             {
                                                 #region DELETA RESUMO ANTIGO
-                                                if (vendaSpress.TIPO == 'C')
+                                                /*if (vendaSpress.TIPO == 'C')
                                                 {
                                                     script = "DELETE TCCCACRES" +
                                                                 " WHERE K0 = '" + resumo.K0 + "')";
@@ -861,13 +861,13 @@ namespace WebApiSpress.Negocios.Firebird
                                                 catch (Exception e)
                                                 {
                                                     throw new Exception("Remoção do resumo indevido " + resumo.RESNRO + " vencimento " + resumo.RESDATVENCTO + ". " + (e.InnerException == null ? e.Message : e.InnerException.InnerException == null ? e.InnerException.Message : e.InnerException.InnerException.Message));
-                                                }
+                                                }*/
                                                 #endregion
                                             }
                                             else
                                             {
                                                 // Obtém desconto
-                                                decimal valorCalculado = decimal.Round(parcelaSpress.PARVLR * (new decimal(1.0) - taxaDescontoAntiga / new decimal(100.0)), 2);
+                                                decimal valorCalculado = decimal.Round(parcelaSpress.PARVLR * (new decimal(1.0) - taxaDescontoAntiga), 2);
 
                                                 #region ATUALIZA RESUMO ANTIGO
                                                 if (vendaSpress.TIPO == 'C')
