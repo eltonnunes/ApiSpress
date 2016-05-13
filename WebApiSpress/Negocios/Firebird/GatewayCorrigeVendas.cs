@@ -11,6 +11,7 @@ using System.Web;
 using WebApiSpress.Bibliotecas;
 using WebApiSpress.Models.Object;
 using WebApiSpress.Models.Sql;
+using WebApiSpress.Negocios.Pgsql;
 
 namespace WebApiSpress.Negocios.Firebird
 {
@@ -171,8 +172,10 @@ namespace WebApiSpress.Negocios.Firebird
                         VendaSpress vendaSpress = null;
                         try
                         {
+                            
                             #region BUSCA A VENDA NAS TABELA DE VENDAS
-
+                            vendaSpress = GatewayIntegracaoVendasRezende.GetVendaSpress(K0, conn, transaction);
+                            /*
                             // Busca primeiro na tabela de vendas à crédito
                             script = "SELECT RECEBINRO, CACADMCOD, EXPMONCOD, CACMODDATREGISTRO, CACMODSEQ, CACMODNROPARCELAS" +
                                     ", CACMODCODBANATU,	CACMODCODAGEATU, CACMODCODCONATU, CACMODNROCARTAO, CACRESNRO, CACMODIDTSITUACAO" +
@@ -196,9 +199,9 @@ namespace WebApiSpress.Negocios.Firebird
                                         MODSEQ = Convert.ToInt32(dr["CACMODSEQ"]),
                                         MODDATREGISTRO = Convert.ToInt32(dr["CACMODDATREGISTRO"]),
                                         MODNROPARCELAS = Convert.ToInt32(dr["CACMODNROPARCELAS"]),
-                                        PARCODBANATU = Convert.ToInt32(dr["CACMODCODBANATU"]),
-                                        PARCODAGEATU = Convert.ToInt32(dr["CACMODCODAGEATU"]),
-                                        PARNROCONATU = Convert.ToString(dr["CACMODCODCONATU"]),
+                                        MODCODBANATU = Convert.ToInt32(dr["CACMODCODBANATU"]),
+                                        MODCODAGEATU = Convert.ToInt32(dr["CACMODCODAGEATU"]),
+                                        MODCODCONATU = Convert.ToString(dr["CACMODCODCONATU"]),
                                         MODNROCARTAO = Convert.ToString(dr["CACMODNROCARTAO"]),
                                         K0 = K0,
                                         MODIDTSITUACAO = Convert.ToString(dr["CACMODIDTSITUACAO"]),
@@ -230,16 +233,17 @@ namespace WebApiSpress.Negocios.Firebird
                                             MODSEQ = Convert.ToInt32(dr["CABMODSEQ"]),
                                             MODDATREGISTRO = Convert.ToInt32(dr["CABMODDATREGISTRO"]),
                                             MODNROPARCELAS = Convert.ToInt32(dr["CABMODNROPARCELAS"]),
-                                            PARCODBANATU = Convert.ToInt32(dr["CABMODCODBANATU"]),
-                                            PARCODAGEATU = Convert.ToInt32(dr["CABMODCODAGEATU"]),
-                                            PARNROCONATU = Convert.ToString(dr["CABMODCODCONATU"]),
-                                            MODNROCARTAO = Convert.ToString(/*Convert.ToInt32(*/dr["CABMODNROCARTAO"]),//),
+                                            MODCODBANATU = Convert.ToInt32(dr["CABMODCODBANATU"]),
+                                            MODCODAGEATU = Convert.ToInt32(dr["CABMODCODAGEATU"]),
+                                            MODCODCONATU = Convert.ToString(dr["CABMODCODCONATU"]),
+                                            MODNROCARTAO = Convert.ToString(dr["CABMODNROCARTAO"]),
                                             K0 = K0,
                                             MODIDTSITUACAO = Convert.ToString(dr["CABMODIDTSITUACAO"]),
                                         };
                                     }
                                 }
                             }
+                            */
                             #endregion
 
                             // Venda foi encontrada?
@@ -474,27 +478,27 @@ namespace WebApiSpress.Negocios.Firebird
                                             {
                                                 script = "INSERT INTO TCCCACPAR (CACADMCOD, EXPMONCOD, RECEBINRO, CACMODDATREGISTRO" +
                                                          ", CACMODSEQ, CACPARNRO, CACPARDATVENCTO, CACPARVLR, CACPARIDTSITUACAO" +
-                                                         ", CACPARCODBANATU, CACPARCODAGEATU, CACPARNROCONATU)" +
+                                                         ", CACMODCODBANATU, CACMODCODAGEATU, CACMODCODCONATU)" +
                                                          " VALUES (" + vendaSpress.ADMCOD + ",  '" + vendaSpress.EXPMONCOD + "'" +
                                                          ", " + vendaSpress.RECEBINRO + ", " + vendaSpress.MODDATREGISTRO +
                                                          ", " + vendaSpress.MODSEQ + ", " + (n + 1) +
                                                          ", " + DatabaseQueries.GetIntDate(rp.dtaRecebimento) +
                                                          ", " + rp.valorParcelaBruta.ToString(CultureInfo.GetCultureInfo("en-GB")) +
-                                                         ", 'AB', " + vendaSpress.PARCODBANATU + ", " + vendaSpress.PARCODAGEATU +
-                                                         ", '" + vendaSpress.PARNROCONATU + "')";
+                                                         ", 'AB', " + vendaSpress.MODCODBANATU + ", " + vendaSpress.MODCODAGEATU +
+                                                         ", '" + vendaSpress.MODCODCONATU + "')";
                                             }
                                             else
                                             {
                                                 script = "INSERT INTO TCCCABPAR (CABADMCOD, EXPMONCOD, RECEBINRO, CABMODDATREGISTRO" +
                                                          ", CABMODSEQ, CABPARNRO, CABPARDATVENCTO, CABPARVLR, CABPARIDTSITUACAO" +
-                                                         ", CABPARCODBANATU, CABPARCODAGEATU, CABPARNROCONATU)" +
+                                                         ", CABMODCODBANATU, CABMODCODAGEATU, CABMODCODCONATU)" +
                                                          " VALUES (" + vendaSpress.ADMCOD + ",  '" + vendaSpress.EXPMONCOD + "'" +
                                                          ", " + vendaSpress.RECEBINRO + ", " + vendaSpress.MODDATREGISTRO +
                                                          ", " + vendaSpress.MODSEQ + ", " + (n + 1) +
                                                          ", " + DatabaseQueries.GetIntDate(rp.dtaRecebimento) +
                                                          ", " + rp.valorParcelaBruta.ToString(CultureInfo.GetCultureInfo("en-GB")) +
-                                                         ", 'AB', " + vendaSpress.PARCODBANATU + ", " + vendaSpress.PARCODAGEATU +
-                                                         ", '" + vendaSpress.PARNROCONATU + "')";
+                                                         ", 'AB', " + vendaSpress.MODCODBANATU + ", " + vendaSpress.MODCODAGEATU +
+                                                         ", '" + vendaSpress.MODCODCONATU + "')";
                                             }
                                             command = new FbCommand(script, conn);
                                             command.Transaction = transaction;

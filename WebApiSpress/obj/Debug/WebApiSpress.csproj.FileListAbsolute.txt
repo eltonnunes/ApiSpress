@@ -88,11 +88,13 @@ D:\ATOS CAPITAL\Projetos\apispress\WebApiSpress\bin\WebApiSpress.pdb
 D:\ATOS CAPITAL\Projetos\apispress\WebApiSpress\bin\Antlr3.Runtime.dll
 D:\ATOS CAPITAL\Projetos\apispress\WebApiSpress\bin\EntityFramework.dll
 D:\ATOS CAPITAL\Projetos\apispress\WebApiSpress\bin\EntityFramework.SqlServer.dll
+D:\ATOS CAPITAL\Projetos\apispress\WebApiSpress\bin\EntityFramework6.Npgsql.dll
 D:\ATOS CAPITAL\Projetos\apispress\WebApiSpress\bin\FirebirdSql.Data.FirebirdClient.dll
 D:\ATOS CAPITAL\Projetos\apispress\WebApiSpress\bin\Microsoft.Data.Edm.dll
 D:\ATOS CAPITAL\Projetos\apispress\WebApiSpress\bin\Microsoft.Data.OData.dll
 D:\ATOS CAPITAL\Projetos\apispress\WebApiSpress\bin\Microsoft.Web.Infrastructure.dll
 D:\ATOS CAPITAL\Projetos\apispress\WebApiSpress\bin\Newtonsoft.Json.dll
+D:\ATOS CAPITAL\Projetos\apispress\WebApiSpress\bin\Npgsql.dll
 D:\ATOS CAPITAL\Projetos\apispress\WebApiSpress\bin\System.Net.Http.Extensions.dll
 D:\ATOS CAPITAL\Projetos\apispress\WebApiSpress\bin\System.Net.Http.Formatting.dll
 D:\ATOS CAPITAL\Projetos\apispress\WebApiSpress\bin\System.Net.Http.Primitives.dll
@@ -115,10 +117,12 @@ D:\ATOS CAPITAL\Projetos\apispress\WebApiSpress\bin\WebGrease.dll
 D:\ATOS CAPITAL\Projetos\apispress\WebApiSpress\bin\xunit.dll
 D:\ATOS CAPITAL\Projetos\apispress\WebApiSpress\bin\EntityFramework.xml
 D:\ATOS CAPITAL\Projetos\apispress\WebApiSpress\bin\EntityFramework.SqlServer.xml
+D:\ATOS CAPITAL\Projetos\apispress\WebApiSpress\bin\EntityFramework6.Npgsql.xml
 D:\ATOS CAPITAL\Projetos\apispress\WebApiSpress\bin\FirebirdSql.Data.FirebirdClient.pdb
 D:\ATOS CAPITAL\Projetos\apispress\WebApiSpress\bin\Microsoft.Data.Edm.xml
 D:\ATOS CAPITAL\Projetos\apispress\WebApiSpress\bin\Microsoft.Data.OData.xml
 D:\ATOS CAPITAL\Projetos\apispress\WebApiSpress\bin\Newtonsoft.Json.xml
+D:\ATOS CAPITAL\Projetos\apispress\WebApiSpress\bin\Npgsql.xml
 D:\ATOS CAPITAL\Projetos\apispress\WebApiSpress\bin\System.Net.Http.Extensions.xml
 D:\ATOS CAPITAL\Projetos\apispress\WebApiSpress\bin\System.Net.Http.Formatting.xml
 D:\ATOS CAPITAL\Projetos\apispress\WebApiSpress\bin\System.Net.Http.Primitives.xml
@@ -164,6 +168,6 @@ D:\ATOS CAPITAL\Projetos\apispress\WebApiSpress\bin\ru\System.Spatial.resources.
 D:\ATOS CAPITAL\Projetos\apispress\WebApiSpress\bin\zh-Hans\System.Spatial.resources.dll
 D:\ATOS CAPITAL\Projetos\apispress\WebApiSpress\bin\zh-Hant\System.Spatial.resources.dll
 D:\ATOS CAPITAL\Projetos\apispress\WebApiSpress\obj\Debug\WebApiSpress.csproj.App.config
-D:\ATOS CAPITAL\Projetos\apispress\WebApiSpress\obj\Debug\WebApiSpress.csprojResolveAssemblyReference.cache
 D:\ATOS CAPITAL\Projetos\apispress\WebApiSpress\obj\Debug\WebApiSpress.dll
 D:\ATOS CAPITAL\Projetos\apispress\WebApiSpress\obj\Debug\WebApiSpress.pdb
+D:\ATOS CAPITAL\Projetos\apispress\WebApiSpress\obj\Debug\WebApiSpress.csprojResolveAssemblyReference.cache

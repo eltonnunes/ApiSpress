@@ -1,17 +1,20 @@
 ﻿using FirebirdSql.Data.FirebirdClient;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Data.Entity.Validation;
 using System.Linq;
 using System.Web;
 using WebApiSpress.Bibliotecas;
 using WebApiSpress.Models.Object;
 using WebApiSpress.Models.Sql;
+using WebApiSpress.Negocios.Pgsql;
 
 namespace WebApiSpress.Negocios.Firebird
 {
     public class GatewayConsultaVendas
     {
+                                            
         public GatewayConsultaVendas() { }
 
         #region CAMPOS
@@ -49,7 +52,6 @@ namespace WebApiSpress.Negocios.Firebird
             dtFiltro = queryString["" + (int)CAMPOS.DATA];
 
             //dtFiltro = "20160215";
-            dtFiltro = dtFiltro.Replace("-", "");
 
             
             string nrCNPJ = null;
@@ -82,11 +84,11 @@ namespace WebApiSpress.Negocios.Firebird
                 {
                     conn.Open();
                 }
-                catch//(Exception e)
+                catch
                 {
-                    //throw new Exception("Falha na abertura da conexão (Cliente). " + (e.InnerException == null ? e.Message : e.InnerException.InnerException == null ? e.InnerException.Message : e.InnerException.InnerException.Message));
                     throw new Exception("Falha de comunicação com o servidor do Cliente");
                 }
+                
 
                 List<ConsultaVendas> list = new List<ConsultaVendas>();
 
@@ -118,7 +120,7 @@ namespace WebApiSpress.Negocios.Firebird
                                 " JOIN TCCCAIXA C ON C.CAIXACOD = M.CACMODCODAGEATU" + 
                                 " JOIN TGLFILIAL F ON F.FILIALCOD = C.FILIALCOD" +
                                 " WHERE VC.CACMODIDTSITUACAO NOT IN ('CA', 'CR')" + // despreza vendas canceladas
-                                " AND VC.CACMODDATREGISTRO = " + dtFiltro + 
+                                " AND VC.CACMODDATREGISTRO = " + dtFiltro.Replace("-", "") + 
                                 (nrCNPJ == null ? "" : " AND F.FILIALNROCGC LIKE '%" + nrCNPJ + "'");
 
                     FbCommand command = new FbCommand(script, conn);
@@ -168,7 +170,7 @@ namespace WebApiSpress.Negocios.Firebird
                                 " JOIN TCCCAIXA C ON C.CAIXACOD = M.CABMODCODAGEATU" + 
                                 " JOIN TGLFILIAL F ON F.FILIALCOD = C.FILIALCOD" +
                                 " WHERE VD.CABMODIDTSITUACAO NOT IN ('CA', 'CR')" + // despreza vendas canceladas
-                                " AND VD.CABMODDATREGISTRO = " + dtFiltro + // campo é inteiro!
+                                " AND VD.CABMODDATREGISTRO = " + dtFiltro.Replace("-", "") + // campo é inteiro!
                                 (nrCNPJ == null ? "" : " AND F.FILIALNROCGC LIKE '%" + nrCNPJ + "'");
 
                     command = new FbCommand(script, conn);
